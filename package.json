@@ -1,0 +1,70 @@
+{
+  "name": "@daguito/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the Daguito conversational AI platform — text, voice, image, and multimodal flows over webhooks and the embeddable widget.",
+  "license": "MIT",
+  "author": "Daguito, LLC",
+  "homepage": "https://daguito.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguito/daguito.git",
+    "directory": "sdks/js"
+  },
+  "bugs": {
+    "url": "https://github.com/daguito/daguito/issues"
+  },
+  "keywords": [
+    "daguito",
+    "ai",
+    "agent",
+    "chatbot",
+    "voice",
+    "websocket",
+    "streaming",
+    "multimodal",
+    "sdk"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./voice": {
+      "types": "./dist/voice/index.d.ts",
+      "import": "./dist/voice/index.js",
+      "require": "./dist/voice/index.cjs"
+    },
+    "./pcm-worklet.js": "./assets/pcm-worklet.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "ws": "^8.20.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
