@@ -1,13 +1,35 @@
-# @daguito/sdk
+<p align="center">
+  <a href="https://daguito.com" target="_blank">
+    <img src="https://raw.githubusercontent.com/daguitocontact-lang/js-sdk/main/assets/logo.png" alt="Daguito" width="160" />
+  </a>
+</p>
 
-Official TypeScript SDK for the [Daguito](https://daguito.com) conversational AI platform.
+<h1 align="center">@daguito/sdk</h1>
 
-Build text, voice, image, and multimodal agent integrations on top of Daguito flows. Works in the browser and Node.js 18+.
+<p align="center">
+  Official TypeScript SDK for the
+  <a href="https://daguito.com">Daguito</a>
+  conversational AI platform —
+  text, voice, image, and multimodal agent flows.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@daguito/sdk"><img src="https://img.shields.io/npm/v/@daguito/sdk.svg?style=flat-square&color=0a0a0a" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@daguito/sdk"><img src="https://img.shields.io/npm/dm/@daguito/sdk.svg?style=flat-square&color=0a0a0a" alt="npm downloads" /></a>
+  <a href="https://github.com/daguitocontact-lang/js-sdk/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@daguito/sdk.svg?style=flat-square&color=0a0a0a" alt="license" /></a>
+  <a href="https://bundlephobia.com/package/@daguito/sdk"><img src="https://img.shields.io/bundlephobia/minzip/@daguito/sdk?style=flat-square&color=0a0a0a&label=minzip" alt="bundle size" /></a>
+</p>
+
+---
+
+Works in the browser and Node.js 18+. TypeScript types included. ESM and CJS dual build.
 
 ```bash
 npm install @daguito/sdk
 # or
 pnpm add @daguito/sdk
+# or
+yarn add @daguito/sdk
 ```
 
 ## What you get
@@ -297,6 +319,14 @@ import type { SendableMessage, StreamEventMap } from '@daguito/sdk'
 import type { VoiceEventMap } from '@daguito/sdk/voice'
 ```
 
+## Resources
+
+- 🌐 [daguito.com](https://daguito.com) — landing & dashboard
+- 📚 [docs.daguito.com](https://docs.daguito.com) — full API and flow reference
+- 💬 [Examples gallery](https://examples.daguito.com) — runnable demos for every surface
+- 🐛 [Issues](https://github.com/daguitocontact-lang/js-sdk/issues) — bug reports & feature requests
+- 📦 [Source](https://github.com/daguitocontact-lang/js-sdk) — public mirror of `sdks/js/` from the Daguito monorepo
+
 ## License
 
-MIT © Daguito, LLC
+MIT © [Daguito, LLC](https://daguito.com)
