@@ -7,11 +7,10 @@
   "homepage": "https://daguito.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daguito/daguito.git",
-    "directory": "sdks/js"
+    "url": "git+https://github.com/daguitocontact-lang/js-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/daguito/daguito/issues"
+    "url": "https://github.com/daguitocontact-lang/js-sdk/issues"
   },
   "keywords": [
     "daguito",
