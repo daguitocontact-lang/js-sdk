@@ -51,6 +51,8 @@ export type {
   NodeLifecycle,
   StreamEventMap,
   WebhookStreamOptions,
+  UploadableFile,
+  ReactNativeFileDescriptor,
 } from './types'
 
 export { Emitter } from './emitter'

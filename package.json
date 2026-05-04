@@ -1,6 +1,6 @@
 {
   "name": "@daguito/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official TypeScript SDK for the Daguito conversational AI platform — text, voice, image, and multimodal flows over webhooks and the embeddable widget.",
   "license": "MIT",
   "author": "Daguito, LLC",
@@ -27,9 +27,11 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "react-native": "./dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "react-native": "./dist/index.js",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },

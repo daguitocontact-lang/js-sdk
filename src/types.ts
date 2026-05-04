@@ -5,12 +5,34 @@
  */
 
 /**
+ * React Native / Expo image-picker descriptor. RN doesn't have `File`, and
+ * its `Blob` lacks the byte-stream the presigned PUT needs — instead the
+ * platform's `fetch` understands a `{ uri, type, name }` object as a body.
+ * The optional `size` lets integrators pass a known byte count (image
+ * pickers expose it as `fileSize`); when absent, the upload signer falls
+ * back to a permissive size check.
+ */
+export interface ReactNativeFileDescriptor {
+  uri: string
+  type: string
+  name: string
+  size?: number
+}
+
+/**
+ * Anything the SDK accepts as a file payload, across runtimes:
+ *   - browser / Node 18+: `File` or `Blob`
+ *   - React Native / Expo: `{ uri, type, name, size? }`
+ */
+export type UploadableFile = File | Blob | ReactNativeFileDescriptor
+
+/**
  * Every modality the platform accepts. Maps 1:1 to the canonical
  * `MessageKind` enum on the server (`@daguito/core/messages/kinds.ts`).
  *
  * For media kinds the integrator can pass either:
- *   - `file` (a File / Blob): SDK uploads it via presigned PUT and rewrites
- *     the inbound to reference the uploaded media key.
+ *   - `file` (an `UploadableFile`): SDK uploads it via presigned PUT and
+ *     rewrites the inbound to reference the uploaded media key.
  *   - `mediaKey` + `mimeType` + `sizeBytes`: pre-uploaded media (caller
  *     handled the upload elsewhere).
  *   - `imageUrl` / `imageUrls`: hosted images on a public URL — gets
@@ -18,7 +40,7 @@
  */
 export type SendableMessage =
   | { kind: 'text'; text: string }
-  | { kind: 'image'; file: File | Blob; text?: string; filename?: string }
+  | { kind: 'image'; file: UploadableFile; text?: string; filename?: string }
   | {
       kind: 'image'
       mediaKey: string
@@ -28,7 +50,7 @@ export type SendableMessage =
     }
   | { kind: 'image'; imageUrl: string; text?: string }
   | { kind: 'image-multi'; imageUrls: string[]; text?: string }
-  | { kind: 'audio'; file: File | Blob; text?: string; filename?: string }
+  | { kind: 'audio'; file: UploadableFile; text?: string; filename?: string }
   | {
       kind: 'audio'
       mediaKey: string
@@ -36,7 +58,7 @@ export type SendableMessage =
       sizeBytes: number
       text?: string
     }
-  | { kind: 'document'; file: File | Blob; text?: string; filename?: string }
+  | { kind: 'document'; file: UploadableFile; text?: string; filename?: string }
   | {
       kind: 'document'
       mediaKey: string

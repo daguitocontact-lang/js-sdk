@@ -220,14 +220,70 @@ Or override the location:
 new VoiceSession({ ..., workletUrl: '/static/audio/daguito-pcm-worklet.js' })
 ```
 
-## Browser vs Node.js
+## Runtime support
 
-| Module | Browser | Node 18+ |
-|---|---|---|
-| `@daguito/sdk` (root) | ✅ | ✅ |
-| `@daguito/sdk/voice` | ✅ | ❌ (uses `getUserMedia`, `AudioWorklet`, `MediaSource`) |
+| Module | Browser | Node 18+ | React Native / Expo |
+|---|---|---|---|
+| `@daguito/sdk` (root) | ✅ | ✅ | ✅ |
+| `@daguito/sdk/voice` | ✅ | ❌ (uses `getUserMedia`, `AudioWorklet`, `MediaSource`) | ❌ (use `expo-av` / `react-native-audio-recorder-player` instead) |
 
-The root entry uses only `fetch` and `WebSocket`, both standard in Node 18+.
+The root entry uses only `fetch` and `WebSocket`, both standard across the
+listed runtimes. Ionic apps run inside a webview, so they behave like
+browsers — no extra setup. Cloudflare Workers / Vercel Edge are supported
+out of the box (the SDK is ESM and tree-shakeable).
+
+## React Native / Expo
+
+The SDK works in React Native and Expo with one caveat: RN doesn't expose
+`File`, and image/audio pickers return a descriptor object instead of a
+`Blob`. The SDK accepts both shapes — pass whatever your picker gave you.
+
+```ts
+import * as ImagePicker from 'expo-image-picker'
+import { WidgetSession } from '@daguito/sdk'
+
+const session = new WidgetSession({ apiUrl, apiKey })
+await session.connect()
+
+const result = await ImagePicker.launchImageLibraryAsync({
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  quality: 0.8,
+})
+if (result.canceled) return
+
+const asset = result.assets[0]
+await session.send({
+  kind: 'image',
+  file: {
+    uri: asset.uri,
+    type: asset.mimeType ?? 'image/jpeg',
+    name: asset.fileName ?? 'photo.jpg',
+    size: asset.fileSize,           // optional, but improves signing
+  },
+  text: 'analyse this',
+})
+```
+
+### Recommended polyfills (RN < 0.74)
+
+Older RN versions ship without `crypto.randomUUID` or full `URL` parsing.
+Add these once at app startup if you target older RN:
+
+```ts
+import 'react-native-url-polyfill/auto'
+import 'react-native-get-random-values'
+```
+
+Expo SDK 50+ and bare RN 0.74+ already include these — skip if you're on
+a recent setup.
+
+### What's not supported in RN
+
+- **`@daguito/sdk/voice`** — depends on browser-only audio APIs. Capture
+  audio with `expo-av` (or `react-native-audio-recorder-player`) and send
+  the resulting file via `session.send({ kind: 'audio', file: { uri, type, name } })`.
+- **Direct `<script>` widget embed** — the floating chat widget is a web
+  artifact. Build your own UI with `WidgetSession` for native apps.
 
 ## Event reference
 

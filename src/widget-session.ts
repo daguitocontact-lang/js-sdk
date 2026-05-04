@@ -2,7 +2,7 @@ import { createWSClient, type WSHandle } from './internal/ws-client'
 import { Emitter, type Listener } from './emitter'
 import { joinHttp, toWsUrl } from './url'
 import { uploadFile, type UploadResult } from './upload'
-import type { SendableMessage } from './types'
+import type { SendableMessage, UploadableFile } from './types'
 
 /**
  * Widget session — for embedding the chat experience on a customer's
@@ -173,7 +173,7 @@ export class WidgetSession {
    * a `File`. Exposed for advanced cases (separate upload UI, retries).
    */
   async uploadFile(input: {
-    file: File | Blob
+    file: UploadableFile
     kind: 'image' | 'audio' | 'document'
     filename?: string
   }): Promise<UploadResult> {
