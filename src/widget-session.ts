@@ -146,21 +146,39 @@ export class WidgetSession {
         kind: 'image',
         filename: message.filename,
       })
-      resolved = { kind: 'image', mediaKey: u.mediaKey, mimeType: u.mimeType, sizeBytes: u.sizeBytes, text: message.text }
+      resolved = {
+        kind: 'image',
+        mediaKey: u.mediaKey,
+        mimeType: u.mimeType,
+        sizeBytes: u.sizeBytes,
+        text: message.text,
+      }
     } else if (message.kind === 'audio' && 'file' in message) {
       const u = await this.uploadFile({
         file: message.file,
         kind: 'audio',
         filename: message.filename,
       })
-      resolved = { kind: 'audio', mediaKey: u.mediaKey, mimeType: u.mimeType, sizeBytes: u.sizeBytes, text: message.text }
+      resolved = {
+        kind: 'audio',
+        mediaKey: u.mediaKey,
+        mimeType: u.mimeType,
+        sizeBytes: u.sizeBytes,
+        text: message.text,
+      }
     } else if (message.kind === 'document' && 'file' in message) {
       const u = await this.uploadFile({
         file: message.file,
         kind: 'document',
         filename: message.filename,
       })
-      resolved = { kind: 'document', mediaKey: u.mediaKey, mimeType: u.mimeType, sizeBytes: u.sizeBytes, text: message.text }
+      resolved = {
+        kind: 'document',
+        mediaKey: u.mediaKey,
+        mimeType: u.mimeType,
+        sizeBytes: u.sizeBytes,
+        text: message.text,
+      }
     }
 
     await this.postMessage(resolved)
@@ -225,10 +243,7 @@ export class WidgetSession {
     }
   }
 
-  private async sendFormResponse(
-    formId: string,
-    payload: Record<string, unknown>,
-  ): Promise<void> {
+  private async sendFormResponse(formId: string, payload: Record<string, unknown>): Promise<void> {
     if (!this.sessionId) return
     const response = await fetch(joinHttp(this.opts.apiUrl, '/api/widget/form-response'), {
       method: 'POST',
@@ -242,7 +257,9 @@ export class WidgetSession {
     })
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      throw new Error(`widget form-response HTTP ${response.status}: ${text || response.statusText}`)
+      throw new Error(
+        `widget form-response HTTP ${response.status}: ${text || response.statusText}`,
+      )
     }
   }
 

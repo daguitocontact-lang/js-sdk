@@ -133,7 +133,10 @@ export class WebhookStreamSession {
     if (!this.ws) return
     const inboundMessage = this.toInboundMessage(message)
     const envelope: Record<string, unknown> = { type: 'message', message: inboundMessage }
-    const computedBase = { ...this.computeBaseInput(message), ...(baseInput ?? this.opts.baseInput) }
+    const computedBase = {
+      ...this.computeBaseInput(message),
+      ...(baseInput ?? this.opts.baseInput),
+    }
     if (Object.keys(computedBase).length > 0) envelope.base_input = computedBase
     this.ws.send(envelope)
   }

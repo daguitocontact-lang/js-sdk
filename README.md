@@ -43,10 +43,10 @@ yarn add @daguito/sdk
 
 The SDK supports two auth surfaces:
 
-| Surface | Auth | Best for |
-|---|---|---|
+| Surface               | Auth                  | Best for                                            |
+| --------------------- | --------------------- | --------------------------------------------------- |
 | Webhook (`sk_wh_...`) | Token issued per-flow | Server-to-server, custom UI on top of a single flow |
-| Widget (`api_key`) | Org-scoped public key | Embeddable chat on a customer site |
+| Widget (`api_key`)    | Org-scoped public key | Embeddable chat on a customer site                  |
 
 Create webhooks and api_keys from your Daguito dashboard.
 
@@ -173,7 +173,7 @@ await kb.ingestText({
 
 // Search — vector + keyword hybrid
 const { hits } = await kb.search({ query: 'laptops para video', topK: 3 })
-hits.forEach(h => console.log(h.score, h.content, h.metadata))
+hits.forEach((h) => console.log(h.score, h.content, h.metadata))
 ```
 
 The `apiKey` controls scopes. Mint one from the dashboard with `kb:read` and/or `kb:write` actions, optionally limited to specific KBs.
@@ -222,10 +222,10 @@ new VoiceSession({ ..., workletUrl: '/static/audio/daguito-pcm-worklet.js' })
 
 ## Runtime support
 
-| Module | Browser | Node 18+ | React Native / Expo |
-|---|---|---|---|
-| `@daguito/sdk` (root) | ✅ | ✅ | ✅ |
-| `@daguito/sdk/voice` | ✅ | ❌ (uses `getUserMedia`, `AudioWorklet`, `MediaSource`) | ❌ (use `expo-av` / `react-native-audio-recorder-player` instead) |
+| Module                | Browser | Node 18+                                                | React Native / Expo                                               |
+| --------------------- | ------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| `@daguito/sdk` (root) | ✅      | ✅                                                      | ✅                                                                |
+| `@daguito/sdk/voice`  | ✅      | ❌ (uses `getUserMedia`, `AudioWorklet`, `MediaSource`) | ❌ (use `expo-av` / `react-native-audio-recorder-player` instead) |
 
 The root entry uses only `fetch` and `WebSocket`, both standard across the
 listed runtimes. Ionic apps run inside a webview, so they behave like
@@ -258,7 +258,7 @@ await session.send({
     uri: asset.uri,
     type: asset.mimeType ?? 'image/jpeg',
     name: asset.fileName ?? 'photo.jpg',
-    size: asset.fileSize,           // optional, but improves signing
+    size: asset.fileSize, // optional, but improves signing
   },
   text: 'analyse this',
 })
@@ -289,58 +289,58 @@ a recent setup.
 
 ### `WebhookStreamSession` and `VoiceSession` events
 
-| Event | Payload | When |
-|---|---|---|
-| `ready` | `{ webhookId }` | Socket authenticated |
-| `closed` | `{ code?, reason? }` | Transport closed |
-| `node.started` | `{ nodeId }` | Engine entered a node |
-| `node.token` | `{ nodeId, text }` | LLM streaming token |
-| `node.completed` | `{ nodeId, durationMs?, output? }` | Node finished |
-| `node.failed` | `{ nodeId, error? }` | Node errored |
-| `node.emit` | `{ nodeId, kind, data }` | Custom telemetry from a node |
-| `flow.completed` | `{ elapsedMs, output? }` | Engine finished |
-| `flow.failed` | `{ error }` | Engine errored |
-| `error` | `{ message }` | Protocol-level error |
+| Event            | Payload                            | When                         |
+| ---------------- | ---------------------------------- | ---------------------------- |
+| `ready`          | `{ webhookId }`                    | Socket authenticated         |
+| `closed`         | `{ code?, reason? }`               | Transport closed             |
+| `node.started`   | `{ nodeId }`                       | Engine entered a node        |
+| `node.token`     | `{ nodeId, text }`                 | LLM streaming token          |
+| `node.completed` | `{ nodeId, durationMs?, output? }` | Node finished                |
+| `node.failed`    | `{ nodeId, error? }`               | Node errored                 |
+| `node.emit`      | `{ nodeId, kind, data }`           | Custom telemetry from a node |
+| `flow.completed` | `{ elapsedMs, output? }`           | Engine finished              |
+| `flow.failed`    | `{ error }`                        | Engine errored               |
+| `error`          | `{ message }`                      | Protocol-level error         |
 
 ### `VoiceSession` adds
 
-| Event | Payload |
-|---|---|
-| `voice.ready` | `{}` |
-| `voice.stopped` | `{ elapsedMs }` |
-| `mic.level` | `{ rms }` (0..1) |
-| `transcript.partial` | `{ text }` |
-| `transcript.final` | `{ text }` |
-| `transcript.error` | `{ error }` |
-| `tts.url` | `{ url }` (attach to `<audio>`) |
-| `tts.chunk` | `{ bytes, index }` |
-| `tts.done` | `{ totalBytes }` |
-| `tts.error` | `{ error }` |
+| Event                | Payload                         |
+| -------------------- | ------------------------------- |
+| `voice.ready`        | `{}`                            |
+| `voice.stopped`      | `{ elapsedMs }`                 |
+| `mic.level`          | `{ rms }` (0..1)                |
+| `transcript.partial` | `{ text }`                      |
+| `transcript.final`   | `{ text }`                      |
+| `transcript.error`   | `{ error }`                     |
+| `tts.url`            | `{ url }` (attach to `<audio>`) |
+| `tts.chunk`          | `{ bytes, index }`              |
+| `tts.done`           | `{ totalBytes }`                |
+| `tts.error`          | `{ error }`                     |
 
 ### `WidgetSession` events
 
-| Event | Payload |
-|---|---|
-| `connected` | `{ sessionId }` |
-| `result` | `{ payload }` |
-| `error` | `{ message }` |
-| `closed` | `{ code?, reason? }` |
+| Event       | Payload              |
+| ----------- | -------------------- |
+| `connected` | `{ sessionId }`      |
+| `result`    | `{ payload }`        |
+| `error`     | `{ message }`        |
+| `closed`    | `{ code?, reason? }` |
 
 ## Multimodal cheat sheet
 
-| Modality | Webhook stream | Widget |
-|---|---|---|
-| `text` | ✅ | ✅ |
-| `image` (URL) | ✅ | ❌ — pass `file` or `mediaKey` |
-| `image` (File auto-upload) | ❌ | ✅ |
-| `image` (pre-uploaded mediaKey) | ✅ | ✅ |
-| `image-multi` | ✅ | ❌ |
-| `audio` (File auto-upload) | ❌ | ✅ |
-| `audio` (mediaKey) | ✅ | ✅ |
-| `document` | ❌ | ✅ |
-| Voice / mic streaming | use `VoiceSession` | — |
-| `form-response` | base_input | ✅ |
-| Knowledge Base | ✅ via `KnowledgeSession` | ✅ via `KnowledgeSession` |
+| Modality                        | Webhook stream            | Widget                         |
+| ------------------------------- | ------------------------- | ------------------------------ |
+| `text`                          | ✅                        | ✅                             |
+| `image` (URL)                   | ✅                        | ❌ — pass `file` or `mediaKey` |
+| `image` (File auto-upload)      | ❌                        | ✅                             |
+| `image` (pre-uploaded mediaKey) | ✅                        | ✅                             |
+| `image-multi`                   | ✅                        | ❌                             |
+| `audio` (File auto-upload)      | ❌                        | ✅                             |
+| `audio` (mediaKey)              | ✅                        | ✅                             |
+| `document`                      | ❌                        | ✅                             |
+| Voice / mic streaming           | use `VoiceSession`        | —                              |
+| `form-response`                 | base_input                | ✅                             |
+| Knowledge Base                  | ✅ via `KnowledgeSession` | ✅ via `KnowledgeSession`      |
 
 ## Testing from Node (no browser)
 
