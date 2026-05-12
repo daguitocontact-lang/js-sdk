@@ -7,7 +7,10 @@ export default defineConfig({
   },
   format: ['esm', 'cjs'],
   dts: true,
-  sourcemap: true,
+  // Source maps disabled on publish — `.map` files ship the original TS
+  // source, which would expose proprietary client logic to anyone who
+  // unpacks the tarball. Keep stack traces minified for SDK consumers.
+  sourcemap: false,
   clean: true,
   splitting: false,
   treeshake: true,
