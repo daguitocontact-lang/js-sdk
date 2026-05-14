@@ -112,14 +112,15 @@ export interface ToolProgressResource {
 }
 
 /**
- * Granular telemetry for long-running tools. Rides on `node.emit` with
- * `data.kind === 'tool_progress'`. Use `parseToolProgress` to narrow the
- * untyped `data` payload into this shape inside your `node.emit` handler.
+ * Data-only progress event.
+ *
+ * Rides on `node.emit` with `data.kind === 'tool_progress'`. Use
+ * `parseToolProgress` to narrow the untyped `data` payload into this shape
+ * inside your `node.emit` handler.
  */
 export interface ToolProgressEvent {
   tool: string
   stage: string
-  message: string
   progress?: number
   resource?: ToolProgressResource
   traceId?: string
@@ -136,7 +137,6 @@ export function parseToolProgress(data: unknown): ToolProgressEvent | null {
 
   const tool = typeof data.tool === 'string' ? data.tool : ''
   const stage = typeof data.stage === 'string' ? data.stage : ''
-  const message = typeof data.message === 'string' ? data.message : ''
   const progress = typeof data.progress === 'number' ? data.progress : undefined
   const attempt =
     typeof data.attempt === 'number' && Number.isInteger(data.attempt)
@@ -156,7 +156,7 @@ export function parseToolProgress(data: unknown): ToolProgressEvent | null {
     }
   }
 
-  return { tool, stage, message, progress, resource, traceId, attempt }
+  return { tool, stage, progress, resource, traceId, attempt }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
