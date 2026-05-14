@@ -25,7 +25,7 @@ import { joinHttp } from './url'
 
 // The message kinds that accept an attachment (mirrors `@daguito/core`
 // `MESSAGE_KINDS`). text / voice_stream / rich never upload anything.
-export type UploadKind = 'image' | 'audio' | 'document'
+export type UploadKind = 'image' | 'audio' | 'document' | 'video'
 
 export interface UploadInput {
   apiUrl: string

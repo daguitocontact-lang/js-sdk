@@ -24,7 +24,7 @@ export interface UploadInput {
   apiKey: string
   sessionId: string
   file: UploadableFile
-  kind: 'image' | 'audio' | 'document'
+  kind: 'image' | 'audio' | 'document' | 'video'
   filename?: string
 }
 

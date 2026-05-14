@@ -124,7 +124,10 @@ export class WebhookStreamSession {
 
   private requiresUpload(message: SendableMessage): boolean {
     return (
-      (message.kind === 'image' || message.kind === 'audio' || message.kind === 'document') &&
+      (message.kind === 'image' ||
+        message.kind === 'audio' ||
+        message.kind === 'document' ||
+        message.kind === 'video') &&
       'file' in message
     )
   }

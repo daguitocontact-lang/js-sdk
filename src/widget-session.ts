@@ -179,6 +179,19 @@ export class WidgetSession {
         sizeBytes: u.sizeBytes,
         text: message.text,
       }
+    } else if (message.kind === 'video' && 'file' in message) {
+      const u = await this.uploadFile({
+        file: message.file,
+        kind: 'video',
+        filename: message.filename,
+      })
+      resolved = {
+        kind: 'video',
+        mediaKey: u.mediaKey,
+        mimeType: u.mimeType,
+        sizeBytes: u.sizeBytes,
+        text: message.text,
+      }
     }
 
     await this.postMessage(resolved)
@@ -192,7 +205,7 @@ export class WidgetSession {
    */
   async uploadFile(input: {
     file: UploadableFile
-    kind: 'image' | 'audio' | 'document'
+    kind: 'image' | 'audio' | 'document' | 'video'
     filename?: string
   }): Promise<UploadResult> {
     if (!this.sessionId) throw new Error('widget session not connected')
@@ -279,7 +292,10 @@ export class WidgetSession {
       )
     }
     if (
-      (message.kind === 'image' || message.kind === 'audio' || message.kind === 'document') &&
+      (message.kind === 'image' ||
+        message.kind === 'audio' ||
+        message.kind === 'document' ||
+        message.kind === 'video') &&
       'mediaKey' in message
     ) {
       return {

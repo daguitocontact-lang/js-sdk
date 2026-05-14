@@ -66,6 +66,14 @@ export type SendableMessage =
       sizeBytes: number
       text?: string
     }
+  | { kind: 'video'; file: UploadableFile; text?: string; filename?: string }
+  | {
+      kind: 'video'
+      mediaKey: string
+      mimeType: string
+      sizeBytes: number
+      text?: string
+    }
   | { kind: 'form-response'; formId: string; payload: Record<string, unknown> }
 
 export type NodeLifecycle = 'started' | 'completed' | 'failed'

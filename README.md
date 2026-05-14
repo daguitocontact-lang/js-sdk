@@ -9,8 +9,7 @@
 <p align="center">
   Official TypeScript SDK for the
   <a href="https://daguito.com">Daguito</a>
-  conversational AI platform —
-  text, voice, image, and multimodal agent flows.
+  conversational AI platform — text, voice, image, audio, document and video agent flows.
 </p>
 
 <p align="center">
@@ -22,33 +21,36 @@
 
 ---
 
-Works in the browser and Node.js 18+. TypeScript types included. ESM and CJS dual build.
+Universal: works in the browser and Node 18+. ESM + CJS dual build. Types included.
 
 ```bash
 npm install @daguito/sdk
 # or
 pnpm add @daguito/sdk
-# or
-yarn add @daguito/sdk
 ```
 
-## What you get
+## What's in the box
 
-- **`runWebhook()`** — one-shot HTTP call to a webhook flow. Wait, get the result.
-- **`WebhookStreamSession`** — long-lived WebSocket for streaming flows. Token streaming, node lifecycle, custom emits.
-- **`WidgetSession`** — embeddable chat with org `api_key` auth, multimodal send (text + image + audio + document with auto-upload), form responses.
-- **`VoiceSession`** (`@daguito/sdk/voice`) — full voice agent: mic capture, audio streaming, server-side STT, streaming TTS playback. Browser only.
+| Symbol                  | Use it for                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `runWebhook()`          | One-shot HTTP call to a flow. Wait, get the result.                              |
+| `WebhookStreamSession`  | Long-lived WebSocket. Streams tokens, node lifecycle, custom emits.              |
+| `WidgetSession`         | Embeddable chat with org `apiKey` — auto-upload for image/audio/document/video.  |
+| `VoiceSession`          | Browser-only — mic capture + server STT + streaming TTS playback.                |
+| `uploadFile()`          | Presigned upload for attachments outside the widget surface.                     |
+| `KnowledgeSession`      | Ingest + search a Knowledge Base with a `sk_dgt_...` org key.                    |
+
+Every event is strongly typed via `StreamEventMap` / `VoiceEventMap`.
 
 ## Authentication
 
-The SDK supports two auth surfaces:
+| Surface               | Key shape       | Best for                                            |
+| --------------------- | --------------- | --------------------------------------------------- |
+| Webhook               | `sk_wh_...`     | Server-to-server, custom UI on top of a single flow |
+| Widget                | `pk_widget_...` | Embeddable chat on a customer site                  |
+| Knowledge Base        | `sk_dgt_...`    | Ingest + search                                     |
 
-| Surface               | Auth                  | Best for                                            |
-| --------------------- | --------------------- | --------------------------------------------------- |
-| Webhook (`sk_wh_...`) | Token issued per-flow | Server-to-server, custom UI on top of a single flow |
-| Widget (`api_key`)    | Org-scoped public key | Embeddable chat on a customer site                  |
-
-Create webhooks and api_keys from your Daguito dashboard.
+Create all three from the Daguito dashboard.
 
 ## Quick start
 
@@ -60,15 +62,14 @@ import { runWebhook } from '@daguito/sdk'
 const result = await runWebhook({
   apiUrl: 'https://api.daguito.com',
   token: process.env.DAGUITO_WEBHOOK_TOKEN!,
-  input: { question: 'What is the price of BTC?' },
+  input: { question: 'What is the capital of France?' },
 })
-
 console.log(result.output)
 ```
 
-Works in Node.js or browser. No streaming — you get the final flow output.
+Works in Node or browser. No streaming — you get the final flow output.
 
-### Streaming webhook (text agent)
+### Streaming a chat agent
 
 ```ts
 import { WebhookStreamSession } from '@daguito/sdk'
@@ -84,38 +85,51 @@ session.on('node.token', ({ text }) => {
   buffer += text
   render(buffer)
 })
-session.on('node.completed', ({ nodeId, durationMs }) => {
-  console.log(`✓ ${nodeId} (${durationMs}ms)`)
-})
-session.on('flow.completed', ({ elapsedMs }) => {
-  console.log(`Done in ${elapsedMs}ms`)
-})
+session.on('flow.completed', ({ elapsedMs }) => console.log(`done in ${elapsedMs}ms`))
 session.on('error', ({ message }) => console.error(message))
 
-session.send({ kind: 'text', text: 'Hola, ¿qué tal?' })
+session.send({ kind: 'text', text: 'Hello!' })
 ```
 
-### Streaming with images
+### Sending attachments
+
+**Pre-uploaded media key** (server-to-server, or you already uploaded):
 
 ```ts
-// Hosted on a public URL (works on streaming-webhook surface)
-session.send({ kind: 'image', imageUrl: 'https://...', text: 'Describe this' })
+import { uploadFile } from '@daguito/sdk'
 
-// Multiple images
-session.send({ kind: 'image-multi', imageUrls: [url1, url2], text: 'Compare' })
+const { mediaKey, sizeBytes } = await uploadFile({
+  apiUrl: 'https://api.daguito.com',
+  webhookId: 'wh_abc123',
+  token: 'sk_wh_...',
+  kind: 'document',         // 'image' | 'audio' | 'document' | 'video'
+  file: pdfFile,
+})
 
-// Pre-uploaded (you handled the upload elsewhere)
 session.send({
-  kind: 'image',
-  mediaKey: 'media/.../abc.jpg',
-  mimeType: 'image/jpeg',
-  sizeBytes: 234_567,
+  kind: 'document',
+  mediaKey,
+  mimeType: 'application/pdf',
+  sizeBytes,
+  text: 'Summarize this',
 })
 ```
 
-> Need to upload a `File` directly from a browser? Use `WidgetSession` (the only surface with a presigned-upload endpoint today).
+**Public image URL** (no upload, fastest path):
 
-### Embeddable widget (multimodal with auto-upload)
+```ts
+session.send({ kind: 'image', imageUrl: 'https://...', text: 'Describe this' })
+
+session.send({
+  kind: 'image-multi',
+  imageUrls: ['https://.../a.jpg', 'https://.../b.jpg'],
+  text: 'Compare',
+})
+```
+
+### Embeddable widget (auto-upload)
+
+The widget surface uploads on your behalf — pass a `File` (or RN file descriptor) and the SDK handles presigning + PUT.
 
 ```ts
 import { WidgetSession } from '@daguito/sdk'
@@ -126,25 +140,14 @@ const widget = new WidgetSession({
   visitorId: localStorage.getItem('visitor_id') ?? undefined,
 })
 
-const config = await widget.connect()
-console.log(config.config.welcomeMessage)
+await widget.connect()
+widget.on('result', ({ payload }) => render(payload))
 
-widget.on('result', ({ payload }) => {
-  appendBotMessage(payload)
-})
-
-// Text
-await widget.send({ kind: 'text', text: 'Hola' })
-
-// Image — SDK auto-uploads
-const file = inputEl.files![0]
-await widget.send({ kind: 'image', file, text: 'Mira esto' })
-
-// Audio — same pattern
+await widget.send({ kind: 'text', text: 'Hello' })
+await widget.send({ kind: 'image', file: imageFile, text: 'Mira esto' })
 await widget.send({ kind: 'audio', file: audioBlob })
-
-// Document
 await widget.send({ kind: 'document', file: pdfFile, filename: 'invoice.pdf' })
+await widget.send({ kind: 'video', file: videoFile, text: 'What happens in this clip?' })
 
 // Form response (resumes a flow paused on a form node)
 await widget.send({
@@ -154,7 +157,36 @@ await widget.send({
 })
 ```
 
-### Knowledge Search
+### Per-session scope (server-enforced KB filter)
+
+When your KB serves many users / workspaces / documents, you want each chat to only see chunks tagged for the right key. Set `scope` on the session — Daguito **forces** every KB search the agent runs to apply it as a metadata filter, server-side. The LLM never sees the values, so it can't widen the search or leak across tenants.
+
+```ts
+const session = new WebhookStreamSession({
+  apiUrl: 'https://api.daguito.com',
+  webhookId: 'wh_abc123',
+  token: 'sk_wh_...',
+  scope: { workspace_id: 'ws_42', document_id: 'doc_abc' },
+})
+```
+
+Make sure ingest writes the same keys into `metadata` — that's the join. Scope values must be primitives.
+
+### Tool progress events (data-only)
+
+Server-side tools (KB search, media analysis, web search) stream `tool_progress` payloads on `node.emit`. Events are **data-only** — no localized strings — so your client owns the copy and UI.
+
+```ts
+import { parseToolProgress } from '@daguito/sdk'
+
+session.on('node.emit', (evt) => {
+  const progress = parseToolProgress(evt)
+  if (!progress) return
+  console.log(progress.tool, progress.stage, progress.resource, progress.result)
+})
+```
+
+### Knowledge Base
 
 ```ts
 import { KnowledgeSession } from '@daguito/sdk'
@@ -165,18 +197,16 @@ const kb = new KnowledgeSession({
   defaultSourceId: 'src_abc123',
 })
 
-// Ingest text — chunks + embeds + indexes server-side
 await kb.ingestText({
-  text: 'MacBook Pro M4 Max with 64GB RAM...',
-  metadata: { category: 'laptop', price_usd: 3499 },
+  text: 'Daguito is a conversational AI platform...',
+  metadata: { workspace_id: 'ws_42', kind: 'doc' },
 })
 
-// Search — vector + keyword hybrid
-const { hits } = await kb.search({ query: 'laptops para video', topK: 3 })
-hits.forEach((h) => console.log(h.score, h.content, h.metadata))
+const { hits } = await kb.search({ query: 'what is daguito', topK: 5 })
+hits.forEach((h) => console.log(h.score, h.content))
 ```
 
-The `apiKey` controls scopes. Mint one from the dashboard with `kb:read` and/or `kb:write` actions, optionally limited to specific KBs.
+`apiKey` scopes (`kb:read`, `kb:write`) are configured in the dashboard, optionally restricted to specific KBs.
 
 ### Voice agent (browser only)
 
@@ -189,105 +219,57 @@ const voice = new VoiceSession({
   token: 'sk_wh_...',
 })
 
-voice.on('voice.ready', () => console.log('mic + sockets up'))
+voice.on('voice.ready', () => console.log('mic up'))
 voice.on('mic.level', ({ rms }) => paintMeter(rms))
 voice.on('transcript.partial', ({ text }) => showLive(text))
 voice.on('transcript.final', ({ text }) => appendUser(text))
 voice.on('node.token', ({ text }) => appendBot(text))
-voice.on('tts.url', ({ url }) => {
-  audioElement.src = url
-  audioElement.play()
-})
-voice.on('voice.stopped', ({ elapsedMs }) => console.log(`stopped after ${elapsedMs}ms`))
+voice.on('tts.url', ({ url }) => { audioEl.src = url; audioEl.play() })
 
 await voice.start()
 // ...
 await voice.stop()
 ```
 
-#### Voice setup: serving the worklet
+#### Worklet setup
 
-`VoiceSession` uses an `AudioWorklet` for low-latency PCM downsampling. Copy the worklet file into your public/ directory:
+`VoiceSession` uses an `AudioWorklet`. Copy the file into your public dir:
 
 ```bash
-# Vite / Next.js / similar
 cp node_modules/@daguito/sdk/assets/pcm-worklet.js public/pcm-worklet.js
 ```
 
-Or override the location:
-
-```ts
-new VoiceSession({ ..., workletUrl: '/static/audio/daguito-pcm-worklet.js' })
-```
-
-## Runtime support
-
-| Module                | Browser | Node 18+                                                | React Native / Expo                                               |
-| --------------------- | ------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
-| `@daguito/sdk` (root) | ✅      | ✅                                                      | ✅                                                                |
-| `@daguito/sdk/voice`  | ✅      | ❌ (uses `getUserMedia`, `AudioWorklet`, `MediaSource`) | ❌ (use `expo-av` / `react-native-audio-recorder-player` instead) |
-
-The root entry uses only `fetch` and `WebSocket`, both standard across the
-listed runtimes. Ionic apps run inside a webview, so they behave like
-browsers — no extra setup. Cloudflare Workers / Vercel Edge are supported
-out of the box (the SDK is ESM and tree-shakeable).
+Or set `workletUrl: '/static/audio/daguito-pcm-worklet.js'` in the constructor.
 
 ## React Native / Expo
 
-The SDK works in React Native and Expo with one caveat: RN doesn't expose
-`File`, and image/audio pickers return a descriptor object instead of a
-`Blob`. The SDK accepts both shapes — pass whatever your picker gave you.
+The root SDK runs in RN with one caveat: there's no `File`. Pass the descriptor your picker returns instead.
 
 ```ts
 import * as ImagePicker from 'expo-image-picker'
 import { WidgetSession } from '@daguito/sdk'
 
-const session = new WidgetSession({ apiUrl, apiKey })
-await session.connect()
+const widget = new WidgetSession({ apiUrl, apiKey })
+await widget.connect()
 
-const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  quality: 0.8,
-})
-if (result.canceled) return
+const r = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 })
+if (r.canceled) return
+const asset = r.assets[0]
 
-const asset = result.assets[0]
-await session.send({
+await widget.send({
   kind: 'image',
-  file: {
-    uri: asset.uri,
-    type: asset.mimeType ?? 'image/jpeg',
-    name: asset.fileName ?? 'photo.jpg',
-    size: asset.fileSize, // optional, but improves signing
-  },
+  file: { uri: asset.uri, type: asset.mimeType ?? 'image/jpeg', name: asset.fileName ?? 'photo.jpg', size: asset.fileSize },
   text: 'analyse this',
 })
 ```
 
-### Recommended polyfills (RN < 0.74)
+`@daguito/sdk/voice` is **not** RN-compatible — capture audio with `expo-av` and send the file via the audio kind instead.
 
-Older RN versions ship without `crypto.randomUUID` or full `URL` parsing.
-Add these once at app startup if you target older RN:
-
-```ts
-import 'react-native-url-polyfill/auto'
-import 'react-native-get-random-values'
-```
-
-Expo SDK 50+ and bare RN 0.74+ already include these — skip if you're on
-a recent setup.
-
-### What's not supported in RN
-
-- **`@daguito/sdk/voice`** — depends on browser-only audio APIs. Capture
-  audio with `expo-av` (or `react-native-audio-recorder-player`) and send
-  the resulting file via `session.send({ kind: 'audio', file: { uri, type, name } })`.
-- **Direct `<script>` widget embed** — the floating chat widget is a web
-  artifact. Build your own UI with `WidgetSession` for native apps.
+For RN < 0.74 add `react-native-url-polyfill/auto` and `react-native-get-random-values` at app startup. Expo 50+ already includes these.
 
 ## Event reference
 
-### `WebhookStreamSession` and `VoiceSession` events
+### `WebhookStreamSession` / `VoiceSession`
 
 | Event            | Payload                            | When                         |
 | ---------------- | ---------------------------------- | ---------------------------- |
@@ -297,27 +279,25 @@ a recent setup.
 | `node.token`     | `{ nodeId, text }`                 | LLM streaming token          |
 | `node.completed` | `{ nodeId, durationMs?, output? }` | Node finished                |
 | `node.failed`    | `{ nodeId, error? }`               | Node errored                 |
-| `node.emit`      | `{ nodeId, kind, data }`           | Custom telemetry from a node |
+| `node.emit`      | `{ nodeId, kind, data }`           | Tool progress, intent emits, custom telemetry |
 | `flow.completed` | `{ elapsedMs, output? }`           | Engine finished              |
 | `flow.failed`    | `{ error }`                        | Engine errored               |
 | `error`          | `{ message }`                      | Protocol-level error         |
 
-### `VoiceSession` adds
+### `VoiceSession` extras
 
-| Event                | Payload                         |
-| -------------------- | ------------------------------- |
-| `voice.ready`        | `{}`                            |
-| `voice.stopped`      | `{ elapsedMs }`                 |
-| `mic.level`          | `{ rms }` (0..1)                |
-| `transcript.partial` | `{ text }`                      |
-| `transcript.final`   | `{ text }`                      |
-| `transcript.error`   | `{ error }`                     |
-| `tts.url`            | `{ url }` (attach to `<audio>`) |
-| `tts.chunk`          | `{ bytes, index }`              |
-| `tts.done`           | `{ totalBytes }`                |
-| `tts.error`          | `{ error }`                     |
+| Event                | Payload                          |
+| -------------------- | -------------------------------- |
+| `voice.ready`        | `{}`                             |
+| `voice.stopped`      | `{ elapsedMs }`                  |
+| `mic.level`          | `{ rms }`                        |
+| `transcript.partial` | `{ text }`                       |
+| `transcript.final`   | `{ text }`                       |
+| `tts.url`            | `{ url }` (attach to `<audio>`)  |
+| `tts.chunk`          | `{ bytes, index }`               |
+| `tts.done`           | `{ totalBytes }`                 |
 
-### `WidgetSession` events
+### `WidgetSession`
 
 | Event       | Payload              |
 | ----------- | -------------------- |
@@ -326,62 +306,49 @@ a recent setup.
 | `error`     | `{ message }`        |
 | `closed`    | `{ code?, reason? }` |
 
-## Multimodal cheat sheet
+## Modality cheat sheet
 
-| Modality                        | Webhook stream            | Widget                         |
-| ------------------------------- | ------------------------- | ------------------------------ |
-| `text`                          | ✅                        | ✅                             |
-| `image` (URL)                   | ✅                        | ❌ — pass `file` or `mediaKey` |
-| `image` (File auto-upload)      | ❌                        | ✅                             |
-| `image` (pre-uploaded mediaKey) | ✅                        | ✅                             |
-| `image-multi`                   | ✅                        | ❌                             |
-| `audio` (File auto-upload)      | ❌                        | ✅                             |
-| `audio` (mediaKey)              | ✅                        | ✅                             |
-| `document`                      | ❌                        | ✅                             |
-| Voice / mic streaming           | use `VoiceSession`        | —                              |
-| `form-response`                 | base_input                | ✅                             |
-| Knowledge Base                  | ✅ via `KnowledgeSession` | ✅ via `KnowledgeSession`      |
+| Modality                        | Webhook stream                       | Widget (auto-upload)            |
+| ------------------------------- | ------------------------------------ | ------------------------------- |
+| Text                            | ✅                                   | ✅                              |
+| Image (URL)                     | ✅                                   | use `file` or `mediaKey`        |
+| Image (file)                    | upload first → `mediaKey`            | ✅                              |
+| Image-multi                     | ✅ (URLs)                            | ❌                              |
+| Audio                           | upload first → `mediaKey`            | ✅                              |
+| Document                        | upload first → `mediaKey`            | ✅                              |
+| Video                           | upload first → `mediaKey`            | ✅                              |
+| Voice / mic streaming           | `VoiceSession` (browser)             | —                               |
+| Form response                   | `base_input`                         | ✅                              |
+| Knowledge Base                  | `KnowledgeSession`                   | `KnowledgeSession`              |
 
-## Testing from Node (no browser)
+## Runtime support
 
-The root entry runs in Node 18+ unchanged — `fetch` and `WebSocket` are standard. Useful for backend integrations, CI smoke tests, or just probing a flow from the terminal.
+| Module                | Browser | Node 18+                                                | React Native / Expo |
+| --------------------- | ------- | ------------------------------------------------------- | ------------------- |
+| `@daguito/sdk` (root) | ✅      | ✅                                                      | ✅                  |
+| `@daguito/sdk/voice`  | ✅      | ❌ (`getUserMedia`, `AudioWorklet`, `MediaSource`)      | ❌                  |
 
-```bash
-# One-shot HTTP webhook
-DAGUITO_API_URL=https://api.daguito.com \
-DAGUITO_TOKEN=sk_wh_xxx \
-node examples/run-webhook.mjs "What's the price of BTC?"
-
-# Streaming WS — prints tokens as they arrive
-DAGUITO_API_URL=https://api.daguito.com \
-DAGUITO_WEBHOOK_ID=wh_abc123 \
-DAGUITO_TOKEN=sk_wh_xxx \
-node examples/stream-webhook.mjs "Cuéntame un cuento corto"
-
-# Self-contained smoke test — spins up a mock server, no real backend
-node examples/mock-server-smoke.mjs
-```
-
-The smoke test is the fastest way to verify your SDK install works: it boots an in-process HTTP+WS mock, runs a one-shot and a streaming session against it, and exits non-zero on any protocol mismatch.
-
-`@daguito/sdk/voice` is the only browser-only entry — it depends on `getUserMedia`, `AudioWorklet`, and `MediaSource`. Importing it from Node throws when the session starts.
+Cloudflare Workers / Vercel Edge are supported out of the box (the SDK is ESM and tree-shakeable).
 
 ## TypeScript
 
-The SDK is written in TypeScript and ships its own types. No `@types/` package needed.
-
 ```ts
-import type { SendableMessage, StreamEventMap } from '@daguito/sdk'
+import type {
+  SendableMessage,
+  StreamEventMap,
+  WebhookStreamOptions,
+  ToolProgressEvent,
+} from '@daguito/sdk'
 import type { VoiceEventMap } from '@daguito/sdk/voice'
 ```
 
 ## Resources
 
 - 🌐 [daguito.com](https://daguito.com) — landing & dashboard
-- 📚 [docs.daguito.com](https://docs.daguito.com) — full API and flow reference
-- 💬 [Examples gallery](https://examples.daguito.com) — runnable demos for every surface
-- 🐛 [Issues](https://github.com/daguitocontact-lang/js-sdk/issues) — bug reports & feature requests
-- 📦 [Source](https://github.com/daguitocontact-lang/js-sdk) — public mirror of `sdks/js/` from the Daguito monorepo
+- 📚 [docs.daguito.com](https://docs.daguito.com) — full API + flow reference
+- 💬 [Examples gallery](https://examples.daguito.com)
+- 🐛 [Issues](https://github.com/daguitocontact-lang/js-sdk/issues)
+- 📦 [Source](https://github.com/daguitocontact-lang/js-sdk)
 
 ## License
 
