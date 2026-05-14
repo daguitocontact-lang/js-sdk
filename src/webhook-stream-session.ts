@@ -151,7 +151,9 @@ export class WebhookStreamSession {
         kind: message.kind,
         text: message.text,
         media: {
-          media_key: message.mediaKey,
+          // MediaRefSchema on the server uses `key` (not `media_key`); the
+          // SDK helper takes camelCase `mediaKey` as a friendlier alias.
+          key: message.mediaKey,
           mime_type: message.mimeType,
           size_bytes: message.sizeBytes,
         },
