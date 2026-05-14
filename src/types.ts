@@ -85,12 +85,82 @@ export type StreamEventMap = {
   'node.started': { nodeId: string }
   'node.completed': { nodeId: string; durationMs?: number; output?: unknown }
   'node.failed': { nodeId: string; error?: string }
-  /** Custom node telemetry — anything emitted via `ctx.emit()` server-side. */
+  /**
+   * Custom node telemetry — anything emitted via `ctx.emit()` server-side.
+   *
+   * The platform reserves `data.kind === 'tool_progress'` for long-running
+   * tool telemetry (web search, media description, KB indexing, …). Use
+   * `parseToolProgress(data)` to narrow it into a typed `ToolProgressEvent`.
+   */
   'node.emit': { nodeId: string; kind: string; data: Record<string, unknown> }
   'flow.completed': { elapsedMs: number; output?: unknown }
   'flow.failed': { error: string }
   /** Auth/protocol error coming back from the server. */
   error: { message: string }
+}
+
+/**
+ * Resource a tool is currently working on (the document being indexed,
+ * the URL being fetched, the image being described, …). Every field is
+ * optional — the server only fills what it has at each stage.
+ */
+export interface ToolProgressResource {
+  kind?: string
+  name?: string
+  mediaKey?: string
+  url?: string
+}
+
+/**
+ * Granular telemetry for long-running tools. Rides on `node.emit` with
+ * `data.kind === 'tool_progress'`. Use `parseToolProgress` to narrow the
+ * untyped `data` payload into this shape inside your `node.emit` handler.
+ */
+export interface ToolProgressEvent {
+  tool: string
+  stage: string
+  message: string
+  progress?: number
+  resource?: ToolProgressResource
+  traceId?: string
+  attempt?: number
+}
+
+/**
+ * Narrow a `node.emit` payload's `data` into a typed `ToolProgressEvent`.
+ * Returns `null` for any payload whose `kind` is not `'tool_progress'`,
+ * so callers can use it as a discriminator without an extra check.
+ */
+export function parseToolProgress(data: unknown): ToolProgressEvent | null {
+  if (!isRecord(data) || data.kind !== 'tool_progress') return null
+
+  const tool = typeof data.tool === 'string' ? data.tool : ''
+  const stage = typeof data.stage === 'string' ? data.stage : ''
+  const message = typeof data.message === 'string' ? data.message : ''
+  const progress = typeof data.progress === 'number' ? data.progress : undefined
+  const attempt =
+    typeof data.attempt === 'number' && Number.isInteger(data.attempt)
+      ? data.attempt
+      : undefined
+  const traceId = typeof data.trace_id === 'string' ? data.trace_id : undefined
+
+  let resource: ToolProgressResource | undefined
+  const rawResource = data.resource
+  if (isRecord(rawResource)) {
+    resource = {
+      kind: typeof rawResource.kind === 'string' ? rawResource.kind : undefined,
+      name: typeof rawResource.name === 'string' ? rawResource.name : undefined,
+      mediaKey:
+        typeof rawResource.media_key === 'string' ? rawResource.media_key : undefined,
+      url: typeof rawResource.url === 'string' ? rawResource.url : undefined,
+    }
+  }
+
+  return { tool, stage, message, progress, resource, traceId, attempt }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /** Options shared by every session that talks to the streaming WS. */

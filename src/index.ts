@@ -46,6 +46,7 @@ export type {
 export { uploadFile, UploadError } from './upload'
 export type { UploadKind, UploadInput, UploadResult } from './upload'
 
+export { parseToolProgress } from './types'
 export type {
   SendableMessage,
   NodeLifecycle,
@@ -53,6 +54,8 @@ export type {
   WebhookStreamOptions,
   UploadableFile,
   ReactNativeFileDescriptor,
+  ToolProgressEvent,
+  ToolProgressResource,
 } from './types'
 
 export { Emitter } from './emitter'
