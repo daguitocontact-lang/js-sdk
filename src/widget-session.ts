@@ -1,7 +1,7 @@
 import { createWSClient, type WSHandle } from './internal/ws-client'
 import { Emitter, type Listener } from './emitter'
 import { joinHttp, toWsUrl } from './url'
-import { uploadFile, type UploadResult } from './upload'
+import { uploadFile, type UploadResult } from './widget-upload'
 import type { SendableMessage, UploadableFile } from './types'
 
 /**

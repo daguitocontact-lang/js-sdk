@@ -43,8 +43,8 @@ export type {
   SearchResult,
 } from './knowledge-session'
 
-export { uploadFile } from './upload'
-export type { UploadInput, UploadResult } from './upload'
+export { uploadFile, UploadError } from './upload'
+export type { UploadKind, UploadInput, UploadResult } from './upload'
 
 export type {
   SendableMessage,
