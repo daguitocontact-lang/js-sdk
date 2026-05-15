@@ -1,3 +1,4 @@
+import { appendClientQueryParams } from './client-headers'
 import { expBackoff } from './backoff'
 
 /**
@@ -148,8 +149,8 @@ export function createWSClient<TInbound = unknown, TOutbound = unknown>(
 
   async function connect(): Promise<void> {
     if (closedByUser) return
-    const url = typeof opts.url === 'function' ? await opts.url() : opts.url
-    const ws = new WebSocket(url, opts.protocols)
+    const resolvedUrl = typeof opts.url === 'function' ? await opts.url() : opts.url
+    const ws = new WebSocket(appendClientQueryParams(resolvedUrl), opts.protocols)
     socket = ws
 
     ws.onopen = () => {

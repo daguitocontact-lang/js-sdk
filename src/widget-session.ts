@@ -1,3 +1,4 @@
+import { clientHeaders } from './internal/client-headers'
 import { createWSClient, type WSHandle } from './internal/ws-client'
 import { Emitter, type Listener } from './emitter'
 import { joinHttp, toWsUrl } from './url'
@@ -75,7 +76,7 @@ export class WidgetSession {
     const initUrl = joinHttp(this.opts.apiUrl, '/api/widget/init')
     const response = await fetch(initUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...clientHeaders() },
       body: JSON.stringify({ api_key: this.opts.apiKey, visitor_id: this.opts.visitorId }),
     })
     if (!response.ok) {
@@ -243,7 +244,7 @@ export class WidgetSession {
     const inbound = this.toInbound(message)
     const response = await fetch(joinHttp(this.opts.apiUrl, '/api/widget/message'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...clientHeaders() },
       body: JSON.stringify({
         session_id: this.sessionId,
         api_key: this.opts.apiKey,
@@ -260,7 +261,7 @@ export class WidgetSession {
     if (!this.sessionId) return
     const response = await fetch(joinHttp(this.opts.apiUrl, '/api/widget/form-response'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...clientHeaders() },
       body: JSON.stringify({
         session_id: this.sessionId,
         api_key: this.opts.apiKey,

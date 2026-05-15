@@ -1,3 +1,4 @@
+import { clientHeaders } from './internal/client-headers'
 import { joinHttp } from './url'
 import type { UploadableFile, ReactNativeFileDescriptor } from './types'
 
@@ -76,7 +77,7 @@ export async function uploadFile(input: UploadInput): Promise<UploadResult> {
 
   const signed = await fetch(joinHttp(input.apiUrl, '/api/widget/upload'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...clientHeaders() },
     body: JSON.stringify({
       session_id: input.sessionId,
       api_key: input.apiKey,

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daguito SDK — public flow key demo</title>
+    <!--
+      This file ships a `dgpk_flow_...` key straight to the browser on
+      purpose. Public flow keys are bound to an `allowed_origins` allowlist
+      configured when the key is minted in the Daguito dashboard. The server
+      checks the request `Origin` header and rejects anything that doesn't
+      match, so leaking the key to a competitor's page is harmless — the
+      backend simply refuses to talk to it.
+
+      Loading options:
+        - CDN (default): the <script type="module"> below pulls from esm.sh
+          so you can open this file directly in a browser.
+        - Local build: comment the CDN import and uncomment the relative
+          import. Run `pnpm build` in `sdks/js/` first.
+    -->
+    <style>
+      :root { color-scheme: light dark; font-family: 'Lexend', system-ui, sans-serif; }
+      body { max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+      h1 { font-family: 'Lexend', sans-serif; font-weight: 700; }
+      #log { border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 12px; padding: 1rem; min-height: 200px; white-space: pre-wrap; }
+      form { display: flex; gap: 0.5rem; margin-top: 1rem; }
+      input { flex: 1; padding: 0.5rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(0, 0, 0, 0.05); }
+      button { padding: 0.5rem 1rem; border-radius: 9999px; border: 0; background: #0a0a0a; color: #fafafa; cursor: pointer; }
+      .bubble.user { color: rgba(0, 0, 0, 0.4); }
+      .bubble.bot { color: #0a0a0a; }
+    </style>
+  </head>
+  <body>
+    <h1>Daguito public-key demo</h1>
+    <p>One <code>dgpk_flow_...</code> key, streaming from the browser.</p>
+
+    <div id="log"></div>
+    <form id="form">
+      <input id="msg" placeholder="Ask the agent..." autofocus />
+      <button type="submit">Send</button>
+    </form>
+
+    <script type="module">
+      // ---- CDN load (default) ---------------------------------------------
+      import { WidgetSession } from 'https://esm.sh/@daguito/sdk@latest'
+      // ---- Local build (alternative) --------------------------------------
+      // import { WidgetSession } from '../dist/index.js'
+
+      // Replace with a real key minted in https://app.daguito.com.
+      // The key is locked to whatever origins you listed at creation time.
+      const API_URL = 'https://api.daguito.com'
+      const PUBLIC_KEY = 'dgpk_flow_REPLACE_ME'
+
+      const log = document.getElementById('log')
+      const form = document.getElementById('form')
+      const msg = document.getElementById('msg')
+
+      function append(role, text) {
+        const div = document.createElement('div')
+        div.className = `bubble ${role}`
+        div.textContent = `${role === 'user' ? 'you' : 'agent'}: ${text}`
+        log.appendChild(div)
+      }
+
+      const widget = new WidgetSession({
+        apiUrl: API_URL,
+        apiKey: PUBLIC_KEY,
+        visitorId: localStorage.getItem('visitor_id') ?? undefined,
+      })
+
+      widget.on('connected', ({ sessionId }) => {
+        localStorage.setItem('visitor_id', sessionId)
+        append('bot', '(connected)')
+      })
+
+      let current = null
+      widget.on('result', ({ payload }) => {
+        const text = typeof payload === 'string' ? payload : payload?.text ?? JSON.stringify(payload)
+        if (!current) {
+          current = document.createElement('div')
+          current.className = 'bubble bot'
+          log.appendChild(current)
+        }
+        current.textContent = `agent: ${text}`
+      })
+
+      widget.on('error', ({ message }) => append('bot', `[error] ${message}`))
+      widget.on('closed', () => append('bot', '(closed)'))
+
+      await widget.connect()
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        const text = msg.value.trim()
+        if (!text) return
+        append('user', text)
+        msg.value = ''
+        current = null
+        await widget.send({ kind: 'text', text })
+      })
+    </script>
+  </body>
+</html>

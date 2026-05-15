@@ -1,3 +1,4 @@
+import { clientHeaders } from './internal/client-headers'
 import { joinHttp } from './url'
 
 /**
@@ -56,7 +57,7 @@ export async function runWebhook(input: WebhookRunInput): Promise<WebhookRunResu
   try {
     response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...clientHeaders() },
       body: JSON.stringify(input.input ?? {}),
       signal: controller.signal,
     })
