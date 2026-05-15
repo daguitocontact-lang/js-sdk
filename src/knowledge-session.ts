@@ -1,3 +1,4 @@
+import { clientHeaders } from './internal/client-headers'
 import { joinHttp } from './url'
 
 /**
@@ -161,6 +162,7 @@ export class KnowledgeSession {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.opts.apiKey}`,
+          ...clientHeaders(),
         },
         body: JSON.stringify(body),
       })

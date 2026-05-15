@@ -1,4 +1,5 @@
 import { Emitter, type Listener } from '../emitter'
+import { appendClientQueryParams } from '../internal/client-headers'
 import { WebhookStreamSession } from '../webhook-stream-session'
 import { startMicCapture, pickAudioWsTransport, arrayBufferToBase64 } from './mic-capture'
 import { createTtsPlayer, base64ToBytes, type TtsPlayer } from './tts-player'
@@ -188,7 +189,7 @@ export class VoiceSession {
       sr: '16000',
     })
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(url)
+      const ws = new WebSocket(appendClientQueryParams(url))
       ws.binaryType = 'arraybuffer'
       this.audioWs = ws
       let resolved = false

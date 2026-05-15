@@ -30,6 +30,17 @@ export type { WebhookRunInput, WebhookRunResult } from './webhook-session'
 
 export { WebhookStreamSession } from './webhook-stream-session'
 
+export {
+  AudioStreamSession,
+  AudioStreamError,
+  SUPPORTED_AUDIO_CODECS,
+} from './audio-stream-session'
+export type {
+  AudioStreamOptions,
+  AudioStreamReady,
+  AudioCodec,
+} from './audio-stream-session'
+
 export { WidgetSession } from './widget-session'
 export type { WidgetSessionOptions, WidgetInitResult, WidgetEventMap } from './widget-session'
 
@@ -60,3 +71,25 @@ export type {
 
 export { Emitter } from './emitter'
 export type { Listener } from './emitter'
+
+// ----------------------------------------------- admin client (purely additive)
+export { Daguito } from './client'
+export type { DaguitoOptions } from './client'
+
+export { DaguitoError } from './admin/http'
+
+export { AccountKeysService } from './admin/account-keys'
+export type { CreateAccountKeyInput } from './admin/account-keys'
+
+export { PublicKeysService } from './admin/public-keys'
+export type { CreatePublicKeyInput } from './admin/public-keys'
+
+export { BudgetsService } from './admin/budgets'
+
+export type {
+  AccountKey,
+  AccountKeyCreated,
+  PublicKey,
+  PublicKeyCreated,
+  OrgBudget,
+} from './admin/types'

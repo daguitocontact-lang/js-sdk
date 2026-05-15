@@ -21,6 +21,7 @@
  *   console.log(result.mediaKey)
  */
 
+import { clientHeaders } from './internal/client-headers'
 import { joinHttp } from './url'
 
 // The message kinds that accept an attachment (mirrors `@daguito/core`
@@ -80,6 +81,7 @@ export async function uploadFile(input: UploadInput): Promise<UploadResult> {
       headers: {
         Authorization: `Bearer ${input.token}`,
         'Content-Type': 'application/json',
+        ...clientHeaders(),
       },
       body: JSON.stringify({
         kind: input.kind,
