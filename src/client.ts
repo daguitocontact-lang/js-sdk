@@ -16,6 +16,7 @@
 
 import { AccountKeysService } from './admin/account-keys'
 import { BudgetsService } from './admin/budgets'
+import { FlowsService } from './admin/flows'
 import { AdminTransport } from './admin/http'
 import { PublicKeysService } from './admin/public-keys'
 
@@ -32,6 +33,7 @@ export class Daguito {
   readonly accountKeys: AccountKeysService
   readonly publicKeys: PublicKeysService
   readonly budgets: BudgetsService
+  readonly flows: FlowsService
 
   constructor(opts: DaguitoOptions) {
     if (!opts.apiUrl) throw new Error('apiUrl is required')
@@ -46,5 +48,6 @@ export class Daguito {
     this.accountKeys = new AccountKeysService(transport)
     this.publicKeys = new PublicKeysService(transport)
     this.budgets = new BudgetsService(transport)
+    this.flows = new FlowsService(transport)
   }
 }

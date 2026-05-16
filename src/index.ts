@@ -86,6 +86,9 @@ export type { CreatePublicKeyInput } from './admin/public-keys'
 
 export { BudgetsService } from './admin/budgets'
 
+export { FlowsService } from './admin/flows'
+export type { ResolvedFlowWebhook } from './admin/flows'
+
 export type {
   AccountKey,
   AccountKeyCreated,
