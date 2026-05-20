@@ -19,6 +19,7 @@ import { BudgetsService } from './admin/budgets'
 import { FlowsService } from './admin/flows'
 import { AdminTransport } from './admin/http'
 import { PublicKeysService } from './admin/public-keys'
+import { TemplatesService } from './admin/templates'
 
 export interface DaguitoOptions {
   apiUrl: string
@@ -34,6 +35,7 @@ export class Daguito {
   readonly publicKeys: PublicKeysService
   readonly budgets: BudgetsService
   readonly flows: FlowsService
+  readonly templates: TemplatesService
 
   constructor(opts: DaguitoOptions) {
     if (!opts.apiUrl) throw new Error('apiUrl is required')
@@ -49,5 +51,6 @@ export class Daguito {
     this.publicKeys = new PublicKeysService(transport)
     this.budgets = new BudgetsService(transport)
     this.flows = new FlowsService(transport)
+    this.templates = new TemplatesService(transport)
   }
 }

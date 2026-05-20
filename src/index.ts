@@ -89,6 +89,17 @@ export { BudgetsService } from './admin/budgets'
 export { FlowsService } from './admin/flows'
 export type { ResolvedFlowWebhook } from './admin/flows'
 
+export { TemplatesService } from './admin/templates'
+export type {
+  TemplateFieldType,
+  TemplateFieldDetail,
+  TemplateSchema,
+  TemplatePreviewExample,
+  TemplatePreviewWarning,
+  TemplatePreviewInput,
+  TemplatePreviewResult,
+} from './admin/templates'
+
 export type {
   AccountKey,
   AccountKeyCreated,
