@@ -1,6 +1,6 @@
 {
   "name": "@daguito/sdk",
-  "version": "0.2.9",
+  "version": "0.3.1",
   "description": "Official TypeScript SDK for the Daguito conversational AI platform — text, voice, image, and multimodal flows over webhooks and the embeddable widget.",
   "license": "MIT",
   "author": "Daguito, LLC",
@@ -54,6 +54,7 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "dev": "tsup --watch",
+    "test": "bun test src/__tests__",
     "prepublishOnly": "pnpm build"
   },
   "engines": {
