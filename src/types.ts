@@ -119,6 +119,24 @@ export interface ToolProgressResource {
   url?: string
 }
 
+/** A single structured result item (e.g. a web-search hit). */
+export interface ToolProgressResultItem {
+  title: string
+  snippet?: string
+  url?: string
+}
+
+/**
+ * Output PRODUCED by a tool on `stage: 'completed'` — the actual caption,
+ * transcript, or document extract (`summary`), and/or structured hits
+ * (`items`). This is tool OUTPUT, not a UI label, so it is safe to render
+ * (e.g. show the transcript under an audio bubble, the caption under an image).
+ */
+export interface ToolProgressResult {
+  summary?: string
+  items?: ToolProgressResultItem[]
+}
+
 /**
  * Data-only progress event.
  *
@@ -131,6 +149,10 @@ export interface ToolProgressEvent {
   stage: string
   progress?: number
   resource?: ToolProgressResource
+  /** Set on `stage: 'completed'` — the tool's produced text/items (caption,
+   *  transcript, doc extract, search hits). Render it to show the user "what
+   *  it understood". */
+  result?: ToolProgressResult
   traceId?: string
   attempt?: number
 }
@@ -164,7 +186,30 @@ export function parseToolProgress(data: unknown): ToolProgressEvent | null {
     }
   }
 
-  return { tool, stage, progress, resource, traceId, attempt }
+  let result: ToolProgressResult | undefined
+  const rawResult = data.result
+  if (isRecord(rawResult)) {
+    const summary = typeof rawResult.summary === 'string' ? rawResult.summary : undefined
+    let items: ToolProgressResultItem[] | undefined
+    if (Array.isArray(rawResult.items)) {
+      items = rawResult.items
+        .filter(isRecord)
+        .map((it) => ({
+          title: typeof it.title === 'string' ? it.title : '',
+          ...(typeof it.snippet === 'string' ? { snippet: it.snippet } : {}),
+          ...(typeof it.url === 'string' ? { url: it.url } : {}),
+        }))
+        .filter((it) => it.title.length > 0)
+    }
+    if (summary !== undefined || (items && items.length > 0)) {
+      result = {
+        ...(summary !== undefined ? { summary } : {}),
+        ...(items && items.length > 0 ? { items } : {}),
+      }
+    }
+  }
+
+  return { tool, stage, progress, resource, result, traceId, attempt }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
