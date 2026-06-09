@@ -46,6 +46,9 @@ export type SendableMessage =
       mediaKey: string
       mimeType: string
       sizeBytes: number
+      /** Presigned URL when the media lives in the client's OWN storage (not
+       *  pre-uploaded to Daguito) — Daguito fetches the bytes from here. */
+      mediaUrl?: string
       text?: string
     }
   | { kind: 'image'; imageUrl: string; text?: string }
@@ -56,6 +59,9 @@ export type SendableMessage =
       mediaKey: string
       mimeType: string
       sizeBytes: number
+      /** Presigned URL when the media lives in the client's OWN storage (not
+       *  pre-uploaded to Daguito) — Daguito fetches the bytes from here. */
+      mediaUrl?: string
       text?: string
     }
   | { kind: 'document'; file: UploadableFile; text?: string; filename?: string }
@@ -64,6 +70,9 @@ export type SendableMessage =
       mediaKey: string
       mimeType: string
       sizeBytes: number
+      /** Presigned URL when the media lives in the client's OWN storage (not
+       *  pre-uploaded to Daguito) — Daguito fetches the bytes from here. */
+      mediaUrl?: string
       text?: string
     }
   | { kind: 'video'; file: UploadableFile; text?: string; filename?: string }
@@ -72,6 +81,9 @@ export type SendableMessage =
       mediaKey: string
       mimeType: string
       sizeBytes: number
+      /** Presigned URL when the media lives in the client's OWN storage (not
+       *  pre-uploaded to Daguito) — Daguito fetches the bytes from here. */
+      mediaUrl?: string
       text?: string
     }
   | { kind: 'form-response'; formId: string; payload: Record<string, unknown> }
