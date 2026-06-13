@@ -22,8 +22,12 @@ import { KnowledgeAdminService } from './admin/knowledge-admin'
 import { PublicKeysService } from './admin/public-keys'
 import { TemplatesService } from './admin/templates'
 
+/** Default ingestion gateway — used when `apiUrl` is omitted. */
+export const DEFAULT_API_URL = 'https://ingest.daguito.com'
+
 export interface DaguitoOptions {
-  apiUrl: string
+  /** Base URL of the ingestion gateway. Defaults to `https://ingest.daguito.com`. */
+  apiUrl?: string
   apiKey: string
   /** Optional `fetch` override — useful in tests and custom runtimes. */
   fetchImpl?: typeof fetch
@@ -40,12 +44,11 @@ export class Daguito {
   readonly knowledge: KnowledgeAdminService
 
   constructor(opts: DaguitoOptions) {
-    if (!opts.apiUrl) throw new Error('apiUrl is required')
     if (!opts.apiKey) throw new Error('apiKey is required')
-    this.apiUrl = opts.apiUrl
+    this.apiUrl = opts.apiUrl ?? DEFAULT_API_URL
     this.apiKey = opts.apiKey
     const transport = new AdminTransport({
-      apiUrl: opts.apiUrl,
+      apiUrl: this.apiUrl,
       apiKey: opts.apiKey,
       fetchImpl: opts.fetchImpl,
     })

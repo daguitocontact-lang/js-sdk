@@ -2,14 +2,14 @@
  * One-shot HTTP webhook from Node. Smallest possible smoke test.
  *
  * Usage:
- *   DAGUITO_API_URL=https://api.daguito.com \
+ *   DAGUITO_API_URL=https://ingest.daguito.com \
  *   DAGUITO_TOKEN=sk_wh_xxxxxxxx \
  *   node examples/run-webhook.mjs "What's the price of BTC?"
  */
 
 import { runWebhook } from '../dist/index.js'
 
-const apiUrl = process.env.DAGUITO_API_URL ?? 'https://api.daguito.com'
+const apiUrl = process.env.DAGUITO_API_URL ?? 'https://ingest.daguito.com'
 const token = process.env.DAGUITO_TOKEN
 const question = process.argv[2] ?? 'Hola'
 

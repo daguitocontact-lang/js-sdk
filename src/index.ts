@@ -78,7 +78,7 @@ export { Emitter } from './emitter'
 export type { Listener } from './emitter'
 
 // ----------------------------------------------- admin client (purely additive)
-export { Daguito } from './client'
+export { Daguito, DEFAULT_API_URL } from './client'
 export type { DaguitoOptions } from './client'
 
 export { DaguitoError } from './admin/http'

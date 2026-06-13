@@ -10,7 +10,7 @@
  *
  * Usage:
  *
- *   DAGUITO_API_URL=https://api.daguito.com \
+ *   DAGUITO_API_URL=https://ingest.daguito.com \
  *   DAGUITO_API_KEY=dgsk_acc_xxxxxxxxxxxx \
  *   DAGUITO_FLOW_ID=flow_abc123 \
  *   node examples/admin-keys.mjs
@@ -18,7 +18,7 @@
 
 import { Daguito } from '../dist/index.js'
 
-const apiUrl = process.env.DAGUITO_API_URL ?? 'https://api.daguito.com'
+const apiUrl = process.env.DAGUITO_API_URL ?? 'https://ingest.daguito.com'
 const apiKey = process.env.DAGUITO_API_KEY
 const flowId = process.env.DAGUITO_FLOW_ID
 
