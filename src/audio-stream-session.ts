@@ -285,6 +285,30 @@ export class AudioStreamSession {
     this.socket.send(copy.buffer)
   }
 
+  /**
+   * Send a text control frame on the audio socket. `pause` ends the live STT
+   * segment server-side (the provider socket closes so it stops billing);
+   * `resume` opens a fresh one — without tearing the session down. Lets a long
+   * consultation pause/resume on the same run.
+   */
+  async sendControl(control: 'pause' | 'resume'): Promise<void> {
+    if (this.closed) throw new AudioStreamError('session is closed')
+    if (!this.socket) throw new AudioStreamError('not connected (call connect() first)')
+    if (!this._ready) throw new AudioStreamError('handshake not complete')
+    if (this.socket.readyState !== 1 /* OPEN */) {
+      throw new AudioStreamError(`socket not open (readyState=${this.socket.readyState})`)
+    }
+    this.socket.send(control)
+  }
+
+  pause(): Promise<void> {
+    return this.sendControl('pause')
+  }
+
+  resume(): Promise<void> {
+    return this.sendControl('resume')
+  }
+
   close(): void {
     if (this.closed) return
     this.closed = true
