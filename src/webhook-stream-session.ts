@@ -159,6 +159,9 @@ export class WebhookStreamSession {
           key: message.mediaKey,
           mime_type: message.mimeType,
           size_bytes: message.sizeBytes,
+          // Client-owned media: Daguito fetches the bytes from this presigned
+          // URL instead of signing the key against its own storage.
+          ...(message.mediaUrl ? { url: message.mediaUrl } : {}),
         },
       }
     }

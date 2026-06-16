@@ -41,6 +41,13 @@ export interface SearchInput {
   enableRewrite?: boolean
   enableRerank?: boolean
   enableCache?: boolean
+  /**
+   * Strict equality filter on chunk metadata. A chunk is returned only if every
+   * key/value here matches its metadata exactly — use it to scope a shared,
+   * multi-tenant source to one tenant (e.g. `{ user_id: 'abc' }`). Sent to the
+   * server as `metadata_equals`.
+   */
+  metadataEquals?: Record<string, unknown>
 }
 
 export interface SearchHit {
@@ -134,6 +141,7 @@ export class KnowledgeSession {
       enable_rewrite: input.enableRewrite,
       enable_rerank: input.enableRerank,
       enable_cache: input.enableCache,
+      metadata_equals: input.metadataEquals,
     })
 
     const body = (await this.parseJson(response)) as SearchResponse

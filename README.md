@@ -60,7 +60,7 @@ Create all three from the Daguito dashboard.
 import { runWebhook } from '@daguito/sdk'
 
 const result = await runWebhook({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   token: process.env.DAGUITO_WEBHOOK_TOKEN!,
   input: { question: 'What is the capital of France?' },
 })
@@ -75,7 +75,7 @@ Works in Node or browser. No streaming — you get the final flow output.
 import { WebhookStreamSession } from '@daguito/sdk'
 
 const session = new WebhookStreamSession({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   webhookId: 'wh_abc123',
   token: 'sk_wh_...',
 })
@@ -99,7 +99,7 @@ session.send({ kind: 'text', text: 'Hello!' })
 import { uploadFile } from '@daguito/sdk'
 
 const { mediaKey, sizeBytes } = await uploadFile({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   webhookId: 'wh_abc123',
   token: 'sk_wh_...',
   kind: 'document',         // 'image' | 'audio' | 'document' | 'video'
@@ -135,7 +135,7 @@ The widget surface uploads on your behalf — pass a `File` (or RN file descript
 import { WidgetSession } from '@daguito/sdk'
 
 const widget = new WidgetSession({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   apiKey: 'pk_widget_...',
   visitorId: localStorage.getItem('visitor_id') ?? undefined,
 })
@@ -163,7 +163,7 @@ When your KB serves many users / workspaces / documents, you want each chat to o
 
 ```ts
 const session = new WebhookStreamSession({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   webhookId: 'wh_abc123',
   token: 'sk_wh_...',
   scope: { workspace_id: 'ws_42', document_id: 'doc_abc' },
@@ -192,7 +192,7 @@ session.on('node.emit', (evt) => {
 import { KnowledgeSession } from '@daguito/sdk'
 
 const kb = new KnowledgeSession({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   apiKey: 'sk_dgt_...',
   defaultSourceId: 'src_abc123',
 })
@@ -214,7 +214,7 @@ hits.forEach((h) => console.log(h.score, h.content))
 import { VoiceSession } from '@daguito/sdk/voice'
 
 const voice = new VoiceSession({
-  apiUrl: 'https://api.daguito.com',
+  apiUrl: 'https://ingest.daguito.com',
   webhookId: 'wh_voice_...',
   token: 'sk_wh_...',
 })

@@ -28,6 +28,9 @@
 export { runWebhook, WebhookError } from './webhook-session'
 export type { WebhookRunInput, WebhookRunResult } from './webhook-session'
 
+export { runWebhookStream, WebhookStreamRunError } from './webhook-run-stream'
+export type { WebhookRunStreamInput, WebhookRunStreamResult } from './webhook-run-stream'
+
 export { WebhookStreamSession } from './webhook-stream-session'
 
 export {
@@ -67,13 +70,15 @@ export type {
   ReactNativeFileDescriptor,
   ToolProgressEvent,
   ToolProgressResource,
+  ToolProgressResult,
+  ToolProgressResultItem,
 } from './types'
 
 export { Emitter } from './emitter'
 export type { Listener } from './emitter'
 
 // ----------------------------------------------- admin client (purely additive)
-export { Daguito } from './client'
+export { Daguito, DEFAULT_API_URL } from './client'
 export type { DaguitoOptions } from './client'
 
 export { DaguitoError } from './admin/http'
@@ -87,7 +92,43 @@ export type { CreatePublicKeyInput } from './admin/public-keys'
 export { BudgetsService } from './admin/budgets'
 
 export { FlowsService } from './admin/flows'
-export type { ResolvedFlowWebhook } from './admin/flows'
+export type {
+  ResolvedFlowWebhook,
+  UpsertAgentInput,
+  UpsertAgentResult,
+  UpsertFlowInput,
+  UpsertFlowResult,
+  HandlerToolRef,
+  FlowGraphNode,
+  FlowGraphEdge,
+} from './admin/flows'
+
+export { TemplatesService } from './admin/templates'
+export type {
+  TemplateFieldType,
+  TemplateFieldDetail,
+  TemplateSchema,
+  TemplatePreviewExample,
+  TemplatePreviewWarning,
+  TemplatePreviewInput,
+  TemplatePreviewResult,
+} from './admin/templates'
+
+export { KnowledgeAdminService } from './admin/knowledge-admin'
+export type {
+  KnowledgeBase,
+  KnowledgeSource,
+  KnowledgeSourceSummary,
+  CreateKnowledgeSourceInput,
+  IngestUrlInput as KnowledgeAdminIngestUrlInput,
+  IngestTextInput as KnowledgeAdminIngestTextInput,
+  IngestResult as KnowledgeAdminIngestResult,
+  IngestJobStatus,
+  DeleteChunksByMetadataInput,
+  DeleteChunksByMetadataResult,
+  UpdateChunksMetadataInput,
+  UpdateChunksMetadataResult,
+} from './admin/knowledge-admin'
 
 export type {
   AccountKey,

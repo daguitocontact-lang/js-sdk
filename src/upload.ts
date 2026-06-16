@@ -11,7 +11,7 @@
  *
  *   import { uploadFile } from '@daguito/sdk'
  *   const result = await uploadFile({
- *     apiUrl: 'https://api.daguito.com',
+ *     apiUrl: 'https://ingest.daguito.com',
  *     webhookId: 'wh_xxx',
  *     token: 'sk_wh_yyy',
  *     kind: 'document',

@@ -48,6 +48,13 @@ export interface AudioStreamOptions {
   readyTimeoutMs?: number
   /** Optional override for tests / custom runtimes. */
   webSocketImpl?: typeof WebSocket
+  /**
+   * Re-open the socket transparently on unexpected drops. Default `true`.
+   * Reuses the same sessionId so server-side XADDs keep landing on the
+   * same Redis stream key — the flow's `a_transcribe_stream` node consumes
+   * across the seam without noticing.
+   */
+  autoReconnect?: boolean
 }
 
 export interface AudioStreamReady {
@@ -85,12 +92,15 @@ export class AudioStreamSession {
     sessionId: string
     sampleRate?: number
     webSocketImpl: typeof WebSocket
+    autoReconnect: boolean
   }
   private socket: WebSocket | null = null
   private _ready: AudioStreamReady | null = null
   private readonly errors: string[] = []
   private connectPromise: Promise<void> | null = null
   private closed = false
+  private reconnectAttempt = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(opts: AudioStreamOptions) {
     const codec = opts.codec ?? 'pcm16'
@@ -116,6 +126,7 @@ export class AudioStreamSession {
       sessionId: opts.sessionId ?? randomSessionId(),
       readyTimeoutMs: opts.readyTimeoutMs ?? 10_000,
       webSocketImpl: WS,
+      autoReconnect: opts.autoReconnect ?? true,
     }
   }
 
@@ -218,13 +229,45 @@ export class AudioStreamSession {
       socket.onclose = () => {
         if (!this._ready) {
           settle(new AudioStreamError('socket closed before ready frame'))
+          return
         }
+        // Dropped after a successful handshake — try to bring the socket
+        // back without surfacing the close to the caller. Same sessionId
+        // keeps the server-side Redis stream key consistent.
+        if (this.socket === socket) this.socket = null
+        if (!this.closed && this.opts.autoReconnect) this.scheduleReconnect()
       }
     })
   }
 
+  private scheduleReconnect(): void {
+    if (this.closed || this.reconnectTimer) return
+    this.reconnectAttempt += 1
+    const delayMs = Math.min(30_000, 1_000 * 2 ** (this.reconnectAttempt - 1))
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null
+      if (this.closed) return
+      // Drop the stale ready snapshot so a new handshake re-fills it.
+      this._ready = null
+      this.connect()
+        .then(() => {
+          this.reconnectAttempt = 0
+        })
+        .catch(() => {
+          // openAndHandshake's reject path is already wired; if it failed,
+          // its socket.onclose will run scheduleReconnect again.
+        })
+    }, delayMs)
+  }
+
   async sendAudio(chunk: ArrayBuffer | Uint8Array): Promise<void> {
     if (this.closed) throw new AudioStreamError('session is closed')
+    // Mid-reconnect: drop the chunk instead of throwing so the caller's
+    // mic-pump loop survives the outage. By the time the reconnect lands,
+    // the buffered audio would be stale anyway.
+    if (this.opts.autoReconnect && (!this.socket || !this._ready || this.socket.readyState !== 1)) {
+      return
+    }
     if (!this.socket) throw new AudioStreamError('not connected (call connect() first)')
     if (!this._ready) throw new AudioStreamError('handshake not complete')
     if (this.socket.readyState !== 1 /* OPEN */) {
@@ -242,9 +285,37 @@ export class AudioStreamSession {
     this.socket.send(copy.buffer)
   }
 
+  /**
+   * Send a text control frame on the audio socket. `pause` ends the live STT
+   * segment server-side (the provider socket closes so it stops billing);
+   * `resume` opens a fresh one — without tearing the session down. Lets a long
+   * consultation pause/resume on the same run.
+   */
+  async sendControl(control: 'pause' | 'resume'): Promise<void> {
+    if (this.closed) throw new AudioStreamError('session is closed')
+    if (!this.socket) throw new AudioStreamError('not connected (call connect() first)')
+    if (!this._ready) throw new AudioStreamError('handshake not complete')
+    if (this.socket.readyState !== 1 /* OPEN */) {
+      throw new AudioStreamError(`socket not open (readyState=${this.socket.readyState})`)
+    }
+    this.socket.send(control)
+  }
+
+  pause(): Promise<void> {
+    return this.sendControl('pause')
+  }
+
+  resume(): Promise<void> {
+    return this.sendControl('resume')
+  }
+
   close(): void {
     if (this.closed) return
     this.closed = true
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     if (this.socket) {
       try {
         this.socket.close()

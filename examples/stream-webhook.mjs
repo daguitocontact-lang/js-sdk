@@ -3,7 +3,7 @@
  * lifecycle, and the final flow result.
  *
  * Usage:
- *   DAGUITO_API_URL=https://api.daguito.com \
+ *   DAGUITO_API_URL=https://ingest.daguito.com \
  *   DAGUITO_WEBHOOK_ID=wh_abc123 \
  *   DAGUITO_TOKEN=sk_wh_xxxxxxxx \
  *   node examples/stream-webhook.mjs "Cuéntame un cuento corto"
@@ -11,7 +11,7 @@
 
 import { WebhookStreamSession } from '../dist/index.js'
 
-const apiUrl = process.env.DAGUITO_API_URL ?? 'https://api.daguito.com'
+const apiUrl = process.env.DAGUITO_API_URL ?? 'https://ingest.daguito.com'
 const webhookId = process.env.DAGUITO_WEBHOOK_ID
 const token = process.env.DAGUITO_TOKEN
 const message = process.argv[2] ?? 'Hola'
