@@ -41,6 +41,23 @@ export interface MicStreamOptions {
   mediaStream?: MediaStream
   /** Re-open the audio socket on unexpected drops. Default true. */
   autoReconnect?: boolean
+  /**
+   * Voice-activity gating. When enabled, audio is only sent (and the STT
+   * segment only kept open) WHILE there is speech — during silence the segment
+   * is paused, so the transcriber (e.g. AssemblyAI) is active only when someone
+   * is talking, and an idle run can reach its silence deadline and close.
+   * Off by default (sends continuously).
+   */
+  vad?: {
+    enabled?: boolean
+    /** RMS (0..1) above which a frame counts as speech. Default 0.012. */
+    threshold?: number
+    /** Keep streaming this long after the last speech frame, so words/sentence
+     *  tails aren't cut and the segment finalizes cleanly. Default 1200ms. */
+    hangoverMs?: number
+  }
+  /** Fires on speech↔silence transitions when `vad.enabled` — for "is talking" UI. */
+  onSpeaking?: (speaking: boolean) => void
 }
 
 export class MicStream {
@@ -50,9 +67,15 @@ export class MicStream {
   private paused = false
   private starting: Promise<void> | null = null
   private stopped = false
+  private readonly vad: { threshold: number; hangoverMs: number } | null
+  private speaking = true
+  private lastSpeechAt = 0
 
   constructor(opts: MicStreamOptions) {
     this.opts = opts
+    this.vad = opts.vad?.enabled
+      ? { threshold: opts.vad.threshold ?? 0.012, hangoverMs: opts.vad.hangoverMs ?? 1200 }
+      : null
   }
 
   get sessionId(): string {
@@ -103,9 +126,14 @@ export class MicStream {
         mediaStream: this.opts.mediaStream,
         onLevel: this.opts.onLevel,
         onFrame: (buf) => {
-          // Drop frames while muted so a paused segment stays silent; the audio
-          // socket survives so unmute resumes on the same run.
-          if (this.paused || this.stopped) return
+          if (this.stopped) return
+          // VAD gate: in silence, pause the STT segment (transcriber idles, no
+          // cost) and drop the frame; resume on speech. Independent of `paused`
+          // (the manual mute) — both must allow it for audio to flow.
+          if (this.vad) this.updateVad(buf)
+          // Drop frames while muted or silent so the paused segment stays silent;
+          // the audio socket survives so we resume on the same run.
+          if (this.paused || !this.speaking) return
           void this.session?.sendAudio(buf).catch(() => {
             /* mid-reconnect drops are expected; the session re-opens itself */
           })
@@ -150,8 +178,41 @@ export class MicStream {
     this.session = null
   }
 
+  // Cheap energy-based VAD over the 16 kHz PCM frames. A `hangoverMs` tail keeps
+  // the stream open briefly after speech so trailing words and the segment's
+  // finalization aren't cut. Crossing into silence pauses the STT segment; back
+  // into speech resumes it — so the transcriber only runs while someone talks.
+  private updateVad(buf: ArrayBuffer): void {
+    const vad = this.vad
+    if (!vad) return
+    const rms = rmsOfPcm16(buf)
+    const now = Date.now()
+    if (rms >= vad.threshold) this.lastSpeechAt = now
+    const speaking = now - this.lastSpeechAt <= vad.hangoverMs
+    if (speaking === this.speaking) return
+    this.speaking = speaking
+    if (speaking) {
+      if (!this.paused) void this.session?.resume().catch(() => {})
+    } else {
+      void this.session?.pause().catch(() => {})
+    }
+    this.opts.onSpeaking?.(speaking)
+  }
+
   private fail(err: unknown): void {
     const e = err instanceof Error ? err : new Error(String(err))
     this.opts.onError?.(e)
   }
+}
+
+/** RMS (0..1) of a 16-bit little-endian PCM frame — the VAD energy measure. */
+function rmsOfPcm16(buf: ArrayBuffer): number {
+  const i16 = new Int16Array(buf)
+  if (i16.length === 0) return 0
+  let sum = 0
+  for (let i = 0; i < i16.length; i += 1) {
+    const s = (i16[i] ?? 0) / 0x8000
+    sum += s * s
+  }
+  return Math.sqrt(sum / i16.length)
 }
