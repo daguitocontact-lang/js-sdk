@@ -241,3 +241,88 @@ export interface WebhookStreamOptions {
   /** Auto-reconnect on transport drop. Default: true. */
   autoReconnect?: boolean
 }
+
+/**
+ * The role a client plays on a flow channel:
+ *   - `produce` — input only (a writer: a patient, a meeting member)
+ *   - `consume` — output only (a reader: a listener, a dashboard)
+ *   - `bidi`    — both (the default, classic streaming session)
+ *
+ * Many producers fan IN onto one shared `sessionKey`; many consumers fan OUT
+ * from it. A `dst_` stream token locks a client to a single role + session.
+ */
+export type StreamRole = 'produce' | 'consume' | 'bidi'
+
+/**
+ * A `dst_` stream token: short-lived, scoped to one (flow, sessionKey, role).
+ * Mint it on a trusted backend with `mintStreamToken(...)` and hand it to an
+ * untrusted client (a browser) so it can attach WITHOUT the webhook secret.
+ */
+export interface StreamTokenInput {
+  apiUrl: string
+  webhookId: string
+  /** The webhook secret (`sk_wh_...`). Stays on the backend — never shipped to
+   *  the browser; only the minted `dst_` token is. */
+  token: string
+  /** Shared rendezvous id all clients on this channel agree on (e.g. a
+   *  consultation/meeting/broadcast id). */
+  sessionKey: string
+  /** Defaults to `consume` (least privilege). */
+  role?: StreamRole
+  /** Token lifetime; server caps it. Default ~1h. */
+  ttlSeconds?: number
+}
+
+export interface StreamTokenResult {
+  token: string
+  sessionKey: string
+  role: StreamRole
+  /** Expiry, epoch seconds. */
+  expiresAt: number
+}
+
+/** Options for an input-only producer (`InputStream`). */
+export interface InputStreamOptions {
+  apiUrl: string
+  webhookId: string
+  /** A `dst_` produce/bidi token, or the webhook secret `sk_wh_...`. */
+  token: string
+  /** Shared rendezvous id. Optional when a scoped `dst_` token already binds it. */
+  sessionKey?: string
+  /** base_input merged on every send. */
+  baseInput?: Record<string, unknown>
+  /** Auto-reconnect on transport drop. Default: true. */
+  autoReconnect?: boolean
+}
+
+/** Options for an output-only consumer (`OutputStream`). */
+export interface OutputStreamOptions {
+  apiUrl: string
+  webhookId: string
+  /** A `dst_` consume/bidi token, or the webhook secret `sk_wh_...`. */
+  token: string
+  /** Shared rendezvous id. Optional when a scoped `dst_` token already binds it. */
+  sessionKey?: string
+  /** Durable stream cursor to resume from. `undefined` = live tail (join now),
+   *  the SDK then auto-tracks the cursor and resumes gaplessly on reconnect. */
+  resumeFrom?: string
+  /** Auto-reconnect on transport drop. Default: true. */
+  autoReconnect?: boolean
+}
+
+/** Options for the bidirectional channel façade (`FlowChannel`). */
+export interface FlowChannelOptions {
+  apiUrl: string
+  webhookId: string
+  /** Shared rendezvous id for both legs. */
+  sessionKey: string
+  /** Default token for both legs (a `bidi` token or the webhook secret). */
+  token?: string
+  /** Per-leg token overrides (e.g. a `produce` token and a `consume` token). */
+  inputToken?: string
+  outputToken?: string
+  /** base_input merged on every input send. */
+  baseInput?: Record<string, unknown>
+  /** Auto-reconnect on transport drop. Default: true. */
+  autoReconnect?: boolean
+}

@@ -33,6 +33,20 @@ export type { WebhookRunStreamInput, WebhookRunStreamResult } from './webhook-ru
 
 export { WebhookStreamSession } from './webhook-stream-session'
 
+// ----------------------------------------------- flow channels (input/output)
+export { InputStream } from './input-stream'
+export { OutputStream } from './output-stream'
+export { FlowChannel } from './flow-channel'
+export { mintStreamToken, StreamTokenError } from './stream-token'
+export type {
+  StreamRole,
+  StreamTokenInput,
+  StreamTokenResult,
+  InputStreamOptions,
+  OutputStreamOptions,
+  FlowChannelOptions,
+} from './types'
+
 export {
   AudioStreamSession,
   AudioStreamError,

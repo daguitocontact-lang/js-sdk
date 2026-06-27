@@ -27,5 +27,8 @@ export type { VoiceSessionOptions, VoiceEventMap } from './voice-session'
 export { startMicCapture, pickAudioWsTransport } from './mic-capture'
 export type { MicCaptureOptions, MicCaptureHandle } from './mic-capture'
 
+export { MicStream } from './mic-stream'
+export type { MicStreamOptions } from './mic-stream'
+
 export { createTtsPlayer, base64ToBytes } from './tts-player'
 export type { TtsPlayer, TtsPlayerOptions, TtsFormat } from './tts-player'

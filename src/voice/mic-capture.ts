@@ -21,8 +21,15 @@ export interface MicCaptureOptions {
   onFrame: (buffer: ArrayBuffer) => void
   /** Optional level reports (RMS 0..1) for "is the user speaking" UI. */
   onLevel?: (rms: number) => void
-  /** Path the worklet module is served at. Default: `/pcm-worklet.js`. */
+  /** Path the worklet module is served at. Defaults to the SDK's inlined Blob. */
   workletUrl?: string
+  /**
+   * Use this MediaStream instead of calling `getUserMedia`. For apps that
+   * already own a processed stream (e.g. a Web Audio mixer injecting test
+   * audio, or a custom constraints set). The caller owns its lifecycle — we
+   * don't stop its tracks on `stop()`.
+   */
+  mediaStream?: MediaStream
 }
 
 export interface MicCaptureHandle {
@@ -36,9 +43,16 @@ export interface MicCaptureHandle {
  * as a fatal session error.
  */
 export async function startMicCapture(opts: MicCaptureOptions): Promise<MicCaptureHandle> {
-  const workletUrl = opts.workletUrl ?? '/pcm-worklet.js'
-  const constraints = buildMicConstraints()
-  const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: constraints })
+  // Default to the inlined worklet (a Blob URL) so consuming apps don't have to
+  // copy `pcm-worklet.js` into their public dir — the SDK is self-contained.
+  // An explicit `workletUrl` still wins (e.g. a CSP that forbids blob: workers).
+  const workletUrl = opts.workletUrl ?? defaultWorkletUrl()
+  // A caller-provided stream (mixer/custom constraints) takes over; otherwise
+  // open the mic ourselves. `ownsStream` decides whether stop() tears it down.
+  const ownsStream = !opts.mediaStream
+  const mediaStream =
+    opts.mediaStream ??
+    (await navigator.mediaDevices.getUserMedia({ audio: buildMicConstraints() }))
 
   const Ctor = (window.AudioContext ||
     (window as unknown as { webkitAudioContext: typeof AudioContext })
@@ -95,7 +109,8 @@ export async function startMicCapture(opts: MicCaptureOptions): Promise<MicCaptu
     } catch {
       // already disconnected.
     }
-    mediaStream.getTracks().forEach((t) => t.stop())
+    // Only stop tracks we opened — a caller-provided stream stays alive.
+    if (ownsStream) mediaStream.getTracks().forEach((t) => t.stop())
     await audioCtx.close().catch(() => {})
   }
 
@@ -143,3 +158,91 @@ export function arrayBufferToBase64(buf: ArrayBuffer): string {
   }
   return btoa(binary)
 }
+
+// Cached Blob URL for the inlined worklet. Built lazily on first mic capture.
+let cachedWorkletUrl: string | null = null
+
+function defaultWorkletUrl(): string {
+  if (cachedWorkletUrl) return cachedWorkletUrl
+  const blob = new Blob([WORKLET_SOURCE], { type: 'text/javascript' })
+  cachedWorkletUrl = URL.createObjectURL(blob)
+  return cachedWorkletUrl
+}
+
+/**
+ * PCM16 downsampler worklet, inlined so the SDK ships self-contained (no
+ * `public/pcm-worklet.js` for apps to copy). Receives Float32 mic samples at
+ * the native rate, downsamples to 16 kHz, converts to Int16-LE, and posts the
+ * ArrayBuffer to the main thread. Keep in sync with `assets/pcm-worklet.js`.
+ */
+const WORKLET_SOURCE = `
+class PcmDownsampler extends AudioWorkletProcessor {
+  constructor(options) {
+    super()
+    const params = (options && options.processorOptions) || {}
+    this.targetSampleRate = params.targetSampleRate || 16000
+    this.buffer = []
+    this.bufferLength = 0
+    this.chunkSamplesIn = Math.round(sampleRate * 0.1)
+  }
+  process(inputs) {
+    const input = inputs[0]
+    if (!input || !input[0]) return true
+    const channel0 = input[0]
+    const channel1 = input.length > 1 ? input[1] : null
+    const mono = new Float32Array(channel0.length)
+    for (let i = 0; i < channel0.length; i += 1) {
+      mono[i] = channel1 ? (channel0[i] + channel1[i]) * 0.5 : channel0[i]
+    }
+    this.buffer.push(mono)
+    this.bufferLength += mono.length
+    while (this.bufferLength >= this.chunkSamplesIn) {
+      const chunk = this.consumeChunk(this.chunkSamplesIn)
+      const down = downsampleLinear(chunk, sampleRate, this.targetSampleRate)
+      const pcm = floatToInt16(down)
+      this.port.postMessage(pcm.buffer, [pcm.buffer])
+    }
+    return true
+  }
+  consumeChunk(samples) {
+    const out = new Float32Array(samples)
+    let written = 0
+    while (written < samples && this.buffer.length > 0) {
+      const head = this.buffer[0]
+      const take = Math.min(samples - written, head.length)
+      out.set(head.subarray(0, take), written)
+      written += take
+      if (take === head.length) this.buffer.shift()
+      else this.buffer[0] = head.subarray(take)
+    }
+    this.bufferLength -= samples
+    return out
+  }
+}
+function downsampleLinear(input, fromRate, toRate) {
+  if (fromRate === toRate) return input
+  const ratio = fromRate / toRate
+  const outLength = Math.floor(input.length / ratio)
+  const out = new Float32Array(outLength)
+  for (let i = 0; i < outLength; i += 1) {
+    const srcIndex = i * ratio
+    const base = Math.floor(srcIndex)
+    const frac = srcIndex - base
+    const a = input[base] || 0
+    const b = input[base + 1] !== undefined ? input[base + 1] : a
+    out[i] = a + (b - a) * frac
+  }
+  return out
+}
+function floatToInt16(f32) {
+  const i16 = new Int16Array(f32.length)
+  for (let i = 0; i < f32.length; i += 1) {
+    let s = f32[i]
+    if (s > 1) s = 1
+    else if (s < -1) s = -1
+    i16[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+  }
+  return i16
+}
+registerProcessor('pcm-downsampler', PcmDownsampler)
+`

@@ -1,6 +1,8 @@
 import { createWSClient, type WSHandle } from './internal/ws-client'
 import { Emitter, type Listener } from './emitter'
 import { randomSessionId, toWsUrl } from './url'
+import { requiresUpload, toInboundMessage, computeBaseInput } from './internal/send-frames'
+import { routeStreamFrame } from './internal/stream-dispatch'
 import type { SendableMessage, StreamEventMap, WebhookStreamOptions } from './types'
 
 /**
@@ -82,7 +84,7 @@ export class WebhookStreamSession {
    */
   send(message: SendableMessage, baseInput?: Record<string, unknown>): void {
     if (this.closed) return
-    if (this.requiresUpload(message)) {
+    if (requiresUpload(message)) {
       throw new Error(
         `WebhookStreamSession.send: kind=${message.kind} with file input requires WidgetSession; use imageUrl, imageUrls or pre-uploaded mediaKey instead`,
       )
@@ -122,72 +124,15 @@ export class WebhookStreamSession {
     this.emitter.removeAll()
   }
 
-  private requiresUpload(message: SendableMessage): boolean {
-    return (
-      (message.kind === 'image' ||
-        message.kind === 'audio' ||
-        message.kind === 'document' ||
-        message.kind === 'video') &&
-      'file' in message
-    )
-  }
-
   private dispatch(message: SendableMessage, baseInput?: Record<string, unknown>): void {
     if (!this.ws) return
-    const inboundMessage = this.toInboundMessage(message)
-    const envelope: Record<string, unknown> = { type: 'message', message: inboundMessage }
+    const envelope: Record<string, unknown> = { type: 'message', message: toInboundMessage(message) }
     const computedBase = {
-      ...this.computeBaseInput(message),
+      ...computeBaseInput(message),
       ...(baseInput ?? this.opts.baseInput),
     }
     if (Object.keys(computedBase).length > 0) envelope.base_input = computedBase
     this.ws.send(envelope)
-  }
-
-  private toInboundMessage(message: SendableMessage): Record<string, unknown> {
-    // The streaming WS path historically uses kind=text on the InboundMessage
-    // and moves image/multi-image references onto base_input — that's how
-    // the existing flows are wired (see apps/api/src/triggers/webhook).
-    // Pre-uploaded media kinds carry the mediaKey on InboundMessage.media.
-    if (message.kind !== 'form-response' && 'mediaKey' in message) {
-      return {
-        kind: message.kind,
-        text: message.text,
-        media: {
-          // MediaRefSchema on the server uses `key` (not `media_key`); the
-          // SDK helper takes camelCase `mediaKey` as a friendlier alias.
-          key: message.mediaKey,
-          mime_type: message.mimeType,
-          size_bytes: message.sizeBytes,
-          // Client-owned media: Daguito fetches the bytes from this presigned
-          // URL instead of signing the key against its own storage.
-          ...(message.mediaUrl ? { url: message.mediaUrl } : {}),
-        },
-      }
-    }
-    if (message.kind === 'form-response') {
-      // form-response has its own widget endpoint; on the streaming surface
-      // we still allow it for completeness — the flow can branch on
-      // base_input.is_form_response.
-      return { kind: 'text', text: '[form-response]' }
-    }
-    if (message.kind === 'text') return { kind: 'text', text: message.text }
-    return { kind: 'text', text: 'text' in message ? (message.text ?? '') : '' }
-  }
-
-  private computeBaseInput(message: SendableMessage): Record<string, unknown> {
-    if (message.kind === 'image' && 'imageUrl' in message) return { image_url: message.imageUrl }
-    if (message.kind === 'image-multi' && message.imageUrls) {
-      return { image_urls: message.imageUrls }
-    }
-    if (message.kind === 'form-response') {
-      return {
-        form_response: message.payload,
-        form_response_id: message.formId,
-        is_form_response: true,
-      }
-    }
-    return {}
   }
 
   private handleFrame(frame: Record<string, unknown>): void {
@@ -214,65 +159,6 @@ export class WebhookStreamSession {
 
     if (type === 'pong') return // already handled by heartbeat ack
 
-    if (type === 'error') {
-      this.emitter.emit('error', { message: String(frame.message ?? 'unknown error') })
-      return
-    }
-
-    const data = (frame.data ?? {}) as Record<string, unknown>
-    const nodeId = typeof frame.node_id === 'string' ? frame.node_id : ''
-
-    if (type === 'node.token') {
-      const text = pickToken(data)
-      if (text) this.emitter.emit('node.token', { nodeId, text })
-      return
-    }
-
-    if (type === 'node.started' || type === 'merge.progress') {
-      this.emitter.emit('node.started', { nodeId })
-      return
-    }
-
-    if (type === 'node.completed') {
-      const durationMs =
-        typeof data.duration_ms === 'number'
-          ? data.duration_ms
-          : typeof data.elapsed_ms === 'number'
-            ? data.elapsed_ms
-            : undefined
-      this.emitter.emit('node.completed', { nodeId, durationMs, output: data.output })
-      return
-    }
-
-    if (type === 'node.failed') {
-      const error = typeof data.error === 'string' ? data.error : undefined
-      this.emitter.emit('node.failed', { nodeId, error })
-      return
-    }
-
-    if (type === 'node.emit') {
-      const kind = typeof data.kind === 'string' ? data.kind : ''
-      this.emitter.emit('node.emit', { nodeId, kind, data })
-      return
-    }
-
-    if (type === 'flow.completed') {
-      const elapsedMs = this.startedAt ? Date.now() - this.startedAt : 0
-      this.emitter.emit('flow.completed', { elapsedMs, output: data.output })
-      return
-    }
-
-    if (type === 'flow.failed') {
-      const error = typeof data.error === 'string' ? data.error : 'flow failed'
-      this.emitter.emit('flow.failed', { error })
-    }
+    routeStreamFrame(frame, this.emitter, { startedAt: this.startedAt })
   }
-}
-
-function pickToken(data: Record<string, unknown>): string {
-  for (const key of ['token', 'text', 'delta', 'content'] as const) {
-    const value = data[key]
-    if (typeof value === 'string' && value.length > 0) return value
-  }
-  return ''
 }
