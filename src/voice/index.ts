@@ -30,5 +30,8 @@ export type { MicCaptureOptions, MicCaptureHandle } from './mic-capture'
 export { MicStream } from './mic-stream'
 export type { MicStreamOptions } from './mic-stream'
 
+export { Transcription } from './transcription'
+export type { TranscriptionOptions } from './transcription'
+
 export { createTtsPlayer, base64ToBytes } from './tts-player'
 export type { TtsPlayer, TtsPlayerOptions, TtsFormat } from './tts-player'
