@@ -134,7 +134,7 @@ export class FlowsService {
   async upsertAgent(input: UpsertAgentInput): Promise<UpsertAgentResult> {
     // Be lenient: accept snake_case aliases too (system_prompt, max_tokens, …),
     // so callers who mirror the HTTP / MCP-tool field names don't hit a 422.
-    const raw = input as Record<string, unknown>
+    const raw = input as unknown as Record<string, unknown>
     const pick = (camel: unknown, snake: string): unknown => camel ?? raw[snake]
 
     const body: Record<string, unknown> = {
