@@ -31,6 +31,9 @@ export type { WebhookRunInput, WebhookRunResult } from './webhook-session'
 export { runWebhookStream, WebhookStreamRunError } from './webhook-run-stream'
 export type { WebhookRunStreamInput, WebhookRunStreamResult } from './webhook-run-stream'
 
+export { runPublicFlow, PublicFlowError } from './public-flow-run'
+export type { RunPublicFlowInput, RunPublicFlowResult } from './public-flow-run'
+
 export { WebhookStreamSession } from './webhook-stream-session'
 
 // ----------------------------------------------- flow channels (input/output)

@@ -31,8 +31,10 @@ export class PublicKeysService {
   }
 
   async create(flowId: string, input: CreatePublicKeyInput): Promise<PublicKeyCreated> {
+    const raw = input as Record<string, unknown>
     const body: Record<string, unknown> = {
-      name: input.name,
+      // Accept `label` as an alias for `name` so callers don't hit a 422.
+      name: input.name ?? raw.label,
       allowed_origins: input.allowedOrigins,
     }
     if (input.monthlyBudgetMicroUsd !== undefined) {
