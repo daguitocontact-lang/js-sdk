@@ -132,24 +132,32 @@ export class FlowsService {
   }
 
   async upsertAgent(input: UpsertAgentInput): Promise<UpsertAgentResult> {
+    // Be lenient: accept snake_case aliases too (system_prompt, max_tokens, …),
+    // so callers who mirror the HTTP / MCP-tool field names don't hit a 422.
+    const raw = input as unknown as Record<string, unknown>
+    const pick = (camel: unknown, snake: string): unknown => camel ?? raw[snake]
+
     const body: Record<string, unknown> = {
       slug: input.slug,
       name: input.name,
       provider: input.provider,
       model: input.model,
-      system_prompt: input.systemPrompt,
+      system_prompt: pick(input.systemPrompt, 'system_prompt'),
     }
-    if (input.visionModel !== undefined) body.vision_model = input.visionModel
-    if (input.temperature !== undefined) body.temperature = input.temperature
-    if (input.maxTokens !== undefined) body.max_tokens = input.maxTokens
-    if (input.historyTurns !== undefined) body.history_turns = input.historyTurns
-    if (input.recentTurns !== undefined) body.recent_turns = input.recentTurns
-    if (input.maxToolIterations !== undefined) body.max_tool_iterations = input.maxToolIterations
-    if (input.tools !== undefined) body.tools = input.tools
-    if (input.memoryFactsSchema !== undefined) body.memory_facts_schema = input.memoryFactsSchema
-    if (input.memorySummaryConfig !== undefined) body.memory_summary_config = input.memorySummaryConfig
-    if (input.contextMemoryKeys !== undefined) body.context_memory_keys = input.contextMemoryKeys
-    if (input.triggerChannels !== undefined) body.trigger_channels = input.triggerChannels
+    const set = (key: string, value: unknown) => {
+      if (value !== undefined) body[key] = value
+    }
+    set('vision_model', pick(input.visionModel, 'vision_model'))
+    set('temperature', input.temperature)
+    set('max_tokens', pick(input.maxTokens, 'max_tokens'))
+    set('history_turns', pick(input.historyTurns, 'history_turns'))
+    set('recent_turns', pick(input.recentTurns, 'recent_turns'))
+    set('max_tool_iterations', pick(input.maxToolIterations, 'max_tool_iterations'))
+    set('tools', input.tools)
+    set('memory_facts_schema', pick(input.memoryFactsSchema, 'memory_facts_schema'))
+    set('memory_summary_config', pick(input.memorySummaryConfig, 'memory_summary_config'))
+    set('context_memory_keys', pick(input.contextMemoryKeys, 'context_memory_keys'))
+    set('trigger_channels', pick(input.triggerChannels, 'trigger_channels'))
 
     const data = await this.transport.request<UpsertAgentWire & { error?: string }>(
       'POST',
@@ -168,10 +176,22 @@ export class FlowsService {
   }
 
   async upsertFlow(input: UpsertFlowInput): Promise<UpsertFlowResult> {
+    // The engine keys each node's handler off `config.step_type` and detects
+    // the entry node by `type === 'trigger'`. Callers naturally set only the
+    // node's `kind`, so backfill both `type` and `config.step_type` from it —
+    // otherwise the graph is rejected (400) or the trigger runs as a step.
+    const nodes = input.graph.nodes.map((node) => {
+      const stepType = node.config?.step_type ?? node.kind ?? node.type
+      return {
+        ...node,
+        ...(stepType ? { type: node.type ?? stepType } : {}),
+        config: { ...(node.config ?? {}), ...(stepType ? { step_type: stepType } : {}) },
+      }
+    })
     const body: Record<string, unknown> = {
       slug: input.slug,
       name: input.name,
-      graph: input.graph,
+      graph: { nodes, edges: input.graph.edges },
     }
     if (input.triggerType !== undefined) body.trigger_type = input.triggerType
 
