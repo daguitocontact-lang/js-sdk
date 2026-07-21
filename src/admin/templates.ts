@@ -1,7 +1,7 @@
 /**
  * Template preview service — `client.templates.preview({ templateBody, … })`.
  *
- * Wraps `POST /v1/templates/preview`. Given a markdown/text body with
+ * Wraps `POST /v1/templates/parse`. Given a markdown/text body with
  * `[[descripción natural]]` placeholders, returns the inferred JSON
  * schema, the typed field list, optional warnings, and (when the server
  * decides to run the extractor) a model-extracted example payload. The
@@ -109,10 +109,10 @@ export class TemplatesService {
     if (input.forceRegenerate !== undefined) body.force_regenerate = input.forceRegenerate
     const data = await this.transport.request<TemplatePreviewResultWire>(
       'POST',
-      '/v1/templates/preview',
+      '/v1/templates/parse',
       body,
     )
-    if (!data) throw new DaguitoError('expected JSON object from POST /v1/templates/preview')
+    if (!data) throw new DaguitoError('expected JSON object from POST /v1/templates/parse')
     return parsePreviewResult(data)
   }
 }
