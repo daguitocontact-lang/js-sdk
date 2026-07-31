@@ -80,17 +80,13 @@ liveDescribe('admin client integration', () => {
     expect(threw).toBe(true)
   })
 
-  test(
-    'knowledge.listSources contains the seed source id',
-    async () => {
-      const sources = await client.knowledge.listSources()
-      expect(Array.isArray(sources)).toBe(true)
-      const hasSeed = sources.some((s) => s.id === SEED_SOURCE_ID)
-      const hasAny = sources.length > 0
-      expect(hasSeed || hasAny).toBe(true)
-    },
-    60_000,
-  )
+  test('knowledge.listSources contains the seed source id', async () => {
+    const sources = await client.knowledge.listSources()
+    expect(Array.isArray(sources)).toBe(true)
+    const hasSeed = sources.some((s) => s.id === SEED_SOURCE_ID)
+    const hasAny = sources.length > 0
+    expect(hasSeed || hasAny).toBe(true)
+  }, 60_000)
 
   test('analytics.getOrg returns the org snapshot', async () => {
     const analytics = await client.analytics.getOrg()
@@ -132,47 +128,43 @@ liveDescribe('admin client integration', () => {
     expect(first.id.length).toBeGreaterThan(0)
   })
 
-  test(
-    'knowledge chunk metadata — patch then delete-by-metadata round-trip',
-    async () => {
-      const seedSourceId = process.env.DAGUITO_LAWYERS_SOURCE_ID ?? SEED_SOURCE_ID
-      const stamp = Date.now()
-      const idA = `test-delete-by-metadata-A-${stamp}`
-      const idB = `test-delete-by-metadata-B-${stamp}`
+  test('knowledge chunk metadata — patch then delete-by-metadata round-trip', async () => {
+    const seedSourceId = process.env.DAGUITO_LAWYERS_SOURCE_ID ?? SEED_SOURCE_ID
+    const stamp = Date.now()
+    const idA = `test-delete-by-metadata-A-${stamp}`
+    const idB = `test-delete-by-metadata-B-${stamp}`
 
-      await client.knowledge.ingestText(seedSourceId, {
-        text: `Lawyer profile A ${stamp}. Specializes in tax law.`,
-        metadata: { lawyer_id: idA, marker: 'chunk-ops-suite' },
-      })
-      await client.knowledge.ingestText(seedSourceId, {
-        text: `Lawyer profile B ${stamp}. Specializes in maritime law.`,
-        metadata: { lawyer_id: idB, marker: 'chunk-ops-suite' },
-      })
+    await client.knowledge.ingestText(seedSourceId, {
+      text: `Lawyer profile A ${stamp}. Specializes in tax law.`,
+      metadata: { lawyer_id: idA, marker: 'chunk-ops-suite' },
+    })
+    await client.knowledge.ingestText(seedSourceId, {
+      text: `Lawyer profile B ${stamp}. Specializes in maritime law.`,
+      metadata: { lawyer_id: idB, marker: 'chunk-ops-suite' },
+    })
 
-      const patched = await client.knowledge.updateChunksMetadata(seedSourceId, {
-        match: { metadataKey: 'lawyer_id', metadataValue: idA },
-        patch: { city: 'Bogota' },
-      })
-      expect(patched.updatedCount).toBeGreaterThanOrEqual(1)
+    const patched = await client.knowledge.updateChunksMetadata(seedSourceId, {
+      match: { metadataKey: 'lawyer_id', metadataValue: idA },
+      patch: { city: 'Bogota' },
+    })
+    expect(patched.updatedCount).toBeGreaterThanOrEqual(1)
 
-      const deletedB = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
-        metadataKey: 'lawyer_id',
-        metadataValue: idB,
-      })
-      expect(deletedB.deletedCount).toBeGreaterThanOrEqual(1)
+    const deletedB = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
+      metadataKey: 'lawyer_id',
+      metadataValue: idB,
+    })
+    expect(deletedB.deletedCount).toBeGreaterThanOrEqual(1)
 
-      const deletedMissing = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
-        metadataKey: 'lawyer_id',
-        metadataValue: `does-not-exist-${stamp}`,
-      })
-      expect(deletedMissing.deletedCount).toBe(0)
+    const deletedMissing = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
+      metadataKey: 'lawyer_id',
+      metadataValue: `does-not-exist-${stamp}`,
+    })
+    expect(deletedMissing.deletedCount).toBe(0)
 
-      const deletedA = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
-        metadataKey: 'lawyer_id',
-        metadataValue: idA,
-      })
-      expect(deletedA.deletedCount).toBeGreaterThanOrEqual(1)
-    },
-    120_000,
-  )
+    const deletedA = await client.knowledge.deleteChunksByMetadata(seedSourceId, {
+      metadataKey: 'lawyer_id',
+      metadataValue: idA,
+    })
+    expect(deletedA.deletedCount).toBeGreaterThanOrEqual(1)
+  }, 120_000)
 })

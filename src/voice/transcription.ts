@@ -74,10 +74,7 @@ export class Transcription {
 
   /** Committed + live interim — what a draft input should show. */
   get draft(): string {
-    return [...this.finals, this.interim]
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+    return [...this.finals, this.interim].join(' ').replace(/\s+/g, ' ').trim()
   }
 
   /** Open the transcript socket + mic and start transcribing. Idempotent. */

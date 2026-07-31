@@ -31,24 +31,24 @@ pnpm add @daguito/sdk
 
 ## What's in the box
 
-| Symbol                  | Use it for                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------- |
-| `runWebhook()`          | One-shot HTTP call to a flow. Wait, get the result.                              |
-| `WebhookStreamSession`  | Long-lived WebSocket. Streams tokens, node lifecycle, custom emits.              |
-| `WidgetSession`         | Embeddable chat with org `apiKey` — auto-upload for image/audio/document/video.  |
-| `VoiceSession`          | Browser-only — mic capture + server STT + streaming TTS playback.                |
-| `uploadFile()`          | Presigned upload for attachments outside the widget surface.                     |
-| `KnowledgeSession`      | Ingest + search a Knowledge Base with a `sk_dgt_...` org key.                    |
+| Symbol                 | Use it for                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `runWebhook()`         | One-shot HTTP call to a flow. Wait, get the result.                             |
+| `WebhookStreamSession` | Long-lived WebSocket. Streams tokens, node lifecycle, custom emits.             |
+| `WidgetSession`        | Embeddable chat with org `apiKey` — auto-upload for image/audio/document/video. |
+| `VoiceSession`         | Browser-only — mic capture + server STT + streaming TTS playback.               |
+| `uploadFile()`         | Presigned upload for attachments outside the widget surface.                    |
+| `KnowledgeSession`     | Ingest + search a Knowledge Base with a `sk_dgt_...` org key.                   |
 
 Every event is strongly typed via `StreamEventMap` / `VoiceEventMap`.
 
 ## Authentication
 
-| Surface               | Key shape       | Best for                                            |
-| --------------------- | --------------- | --------------------------------------------------- |
-| Webhook               | `sk_wh_...`     | Server-to-server, custom UI on top of a single flow |
-| Widget                | `pk_widget_...` | Embeddable chat on a customer site                  |
-| Knowledge Base        | `sk_dgt_...`    | Ingest + search                                     |
+| Surface        | Key shape       | Best for                                            |
+| -------------- | --------------- | --------------------------------------------------- |
+| Webhook        | `sk_wh_...`     | Server-to-server, custom UI on top of a single flow |
+| Widget         | `pk_widget_...` | Embeddable chat on a customer site                  |
+| Knowledge Base | `sk_dgt_...`    | Ingest + search                                     |
 
 Create all three from the Daguito dashboard.
 
@@ -102,7 +102,7 @@ const { mediaKey, sizeBytes } = await uploadFile({
   apiUrl: 'https://ingest.daguito.com',
   webhookId: 'wh_abc123',
   token: 'sk_wh_...',
-  kind: 'document',         // 'image' | 'audio' | 'document' | 'video'
+  kind: 'document', // 'image' | 'audio' | 'document' | 'video'
   file: pdfFile,
 })
 
@@ -224,7 +224,10 @@ voice.on('mic.level', ({ rms }) => paintMeter(rms))
 voice.on('transcript.partial', ({ text }) => showLive(text))
 voice.on('transcript.final', ({ text }) => appendUser(text))
 voice.on('node.token', ({ text }) => appendBot(text))
-voice.on('tts.url', ({ url }) => { audioEl.src = url; audioEl.play() })
+voice.on('tts.url', ({ url }) => {
+  audioEl.src = url
+  audioEl.play()
+})
 
 await voice.start()
 // ...
@@ -258,7 +261,12 @@ const asset = r.assets[0]
 
 await widget.send({
   kind: 'image',
-  file: { uri: asset.uri, type: asset.mimeType ?? 'image/jpeg', name: asset.fileName ?? 'photo.jpg', size: asset.fileSize },
+  file: {
+    uri: asset.uri,
+    type: asset.mimeType ?? 'image/jpeg',
+    name: asset.fileName ?? 'photo.jpg',
+    size: asset.fileSize,
+  },
   text: 'analyse this',
 })
 ```
@@ -271,31 +279,31 @@ For RN < 0.74 add `react-native-url-polyfill/auto` and `react-native-get-random-
 
 ### `WebhookStreamSession` / `VoiceSession`
 
-| Event            | Payload                            | When                         |
-| ---------------- | ---------------------------------- | ---------------------------- |
-| `ready`          | `{ webhookId }`                    | Socket authenticated         |
-| `closed`         | `{ code?, reason? }`               | Transport closed             |
-| `node.started`   | `{ nodeId }`                       | Engine entered a node        |
-| `node.token`     | `{ nodeId, text }`                 | LLM streaming token          |
-| `node.completed` | `{ nodeId, durationMs?, output? }` | Node finished                |
-| `node.failed`    | `{ nodeId, error? }`               | Node errored                 |
+| Event            | Payload                            | When                                          |
+| ---------------- | ---------------------------------- | --------------------------------------------- |
+| `ready`          | `{ webhookId }`                    | Socket authenticated                          |
+| `closed`         | `{ code?, reason? }`               | Transport closed                              |
+| `node.started`   | `{ nodeId }`                       | Engine entered a node                         |
+| `node.token`     | `{ nodeId, text }`                 | LLM streaming token                           |
+| `node.completed` | `{ nodeId, durationMs?, output? }` | Node finished                                 |
+| `node.failed`    | `{ nodeId, error? }`               | Node errored                                  |
 | `node.emit`      | `{ nodeId, kind, data }`           | Tool progress, intent emits, custom telemetry |
-| `flow.completed` | `{ elapsedMs, output? }`           | Engine finished              |
-| `flow.failed`    | `{ error }`                        | Engine errored               |
-| `error`          | `{ message }`                      | Protocol-level error         |
+| `flow.completed` | `{ elapsedMs, output? }`           | Engine finished                               |
+| `flow.failed`    | `{ error }`                        | Engine errored                                |
+| `error`          | `{ message }`                      | Protocol-level error                          |
 
 ### `VoiceSession` extras
 
-| Event                | Payload                          |
-| -------------------- | -------------------------------- |
-| `voice.ready`        | `{}`                             |
-| `voice.stopped`      | `{ elapsedMs }`                  |
-| `mic.level`          | `{ rms }`                        |
-| `transcript.partial` | `{ text }`                       |
-| `transcript.final`   | `{ text }`                       |
-| `tts.url`            | `{ url }` (attach to `<audio>`)  |
-| `tts.chunk`          | `{ bytes, index }`               |
-| `tts.done`           | `{ totalBytes }`                 |
+| Event                | Payload                         |
+| -------------------- | ------------------------------- |
+| `voice.ready`        | `{}`                            |
+| `voice.stopped`      | `{ elapsedMs }`                 |
+| `mic.level`          | `{ rms }`                       |
+| `transcript.partial` | `{ text }`                      |
+| `transcript.final`   | `{ text }`                      |
+| `tts.url`            | `{ url }` (attach to `<audio>`) |
+| `tts.chunk`          | `{ bytes, index }`              |
+| `tts.done`           | `{ totalBytes }`                |
 
 ### `WidgetSession`
 
@@ -308,25 +316,25 @@ For RN < 0.74 add `react-native-url-polyfill/auto` and `react-native-get-random-
 
 ## Modality cheat sheet
 
-| Modality                        | Webhook stream                       | Widget (auto-upload)            |
-| ------------------------------- | ------------------------------------ | ------------------------------- |
-| Text                            | ✅                                   | ✅                              |
-| Image (URL)                     | ✅                                   | use `file` or `mediaKey`        |
-| Image (file)                    | upload first → `mediaKey`            | ✅                              |
-| Image-multi                     | ✅ (URLs)                            | ❌                              |
-| Audio                           | upload first → `mediaKey`            | ✅                              |
-| Document                        | upload first → `mediaKey`            | ✅                              |
-| Video                           | upload first → `mediaKey`            | ✅                              |
-| Voice / mic streaming           | `VoiceSession` (browser)             | —                               |
-| Form response                   | `base_input`                         | ✅                              |
-| Knowledge Base                  | `KnowledgeSession`                   | `KnowledgeSession`              |
+| Modality              | Webhook stream            | Widget (auto-upload)     |
+| --------------------- | ------------------------- | ------------------------ |
+| Text                  | ✅                        | ✅                       |
+| Image (URL)           | ✅                        | use `file` or `mediaKey` |
+| Image (file)          | upload first → `mediaKey` | ✅                       |
+| Image-multi           | ✅ (URLs)                 | ❌                       |
+| Audio                 | upload first → `mediaKey` | ✅                       |
+| Document              | upload first → `mediaKey` | ✅                       |
+| Video                 | upload first → `mediaKey` | ✅                       |
+| Voice / mic streaming | `VoiceSession` (browser)  | —                        |
+| Form response         | `base_input`              | ✅                       |
+| Knowledge Base        | `KnowledgeSession`        | `KnowledgeSession`       |
 
 ## Runtime support
 
-| Module                | Browser | Node 18+                                                | React Native / Expo |
-| --------------------- | ------- | ------------------------------------------------------- | ------------------- |
-| `@daguito/sdk` (root) | ✅      | ✅                                                      | ✅                  |
-| `@daguito/sdk/voice`  | ✅      | ❌ (`getUserMedia`, `AudioWorklet`, `MediaSource`)      | ❌                  |
+| Module                | Browser | Node 18+                                           | React Native / Expo |
+| --------------------- | ------- | -------------------------------------------------- | ------------------- |
+| `@daguito/sdk` (root) | ✅      | ✅                                                 | ✅                  |
+| `@daguito/sdk/voice`  | ✅      | ❌ (`getUserMedia`, `AudioWorklet`, `MediaSource`) | ❌                  |
 
 Cloudflare Workers / Vercel Edge are supported out of the box (the SDK is ESM and tree-shakeable).
 

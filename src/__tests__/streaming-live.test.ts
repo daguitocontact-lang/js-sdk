@@ -82,70 +82,66 @@ liveDescribe('live streaming reaches Daguito', () => {
     expect(minted.expiresAt).toBeGreaterThan(0)
   })
 
-  test(
-    'OutputStream receives real flow frames produced by InputStream over the live socket',
-    async () => {
-      const consume = await mintStreamToken({
-        apiUrl: apiUrl as string,
-        webhookId,
-        token: webhookToken,
-        sessionKey,
-        role: 'consume',
-      })
+  test('OutputStream receives real flow frames produced by InputStream over the live socket', async () => {
+    const consume = await mintStreamToken({
+      apiUrl: apiUrl as string,
+      webhookId,
+      token: webhookToken,
+      sessionKey,
+      role: 'consume',
+    })
 
-      const tokens: string[] = []
-      const emits: string[] = []
-      let completed = false
-      let ready = false
-      let errored = ''
+    const tokens: string[] = []
+    const emits: string[] = []
+    let completed = false
+    let ready = false
+    let errored = ''
 
-      const out = new OutputStream({
-        apiUrl: apiUrl as string,
-        webhookId,
-        token: consume.token,
-        sessionKey,
-      })
-      streams.push(out)
-      out.on('ready', () => {
-        ready = true
-      })
-      out.on('node.token', ({ text }) => {
-        if (text) tokens.push(text)
-      })
-      out.on('node.emit', ({ kind }) => {
-        emits.push(String(kind))
-      })
-      out.on('flow.completed', () => {
-        completed = true
-      })
-      out.on('error', ({ message }) => {
-        errored = message
-      })
+    const out = new OutputStream({
+      apiUrl: apiUrl as string,
+      webhookId,
+      token: consume.token,
+      sessionKey,
+    })
+    streams.push(out)
+    out.on('ready', () => {
+      ready = true
+    })
+    out.on('node.token', ({ text }) => {
+      if (text) tokens.push(text)
+    })
+    out.on('node.emit', ({ kind }) => {
+      emits.push(String(kind))
+    })
+    out.on('flow.completed', () => {
+      completed = true
+    })
+    out.on('error', ({ message }) => {
+      errored = message
+    })
 
-      // Attach the consumer before producing so we tail from the start.
-      await waitUntil(() => ready, 8000)
-      expect(errored).toBe('')
-      expect(ready).toBe(true)
-      await sleep(400) // let session.start round-trip before producing
+    // Attach the consumer before producing so we tail from the start.
+    await waitUntil(() => ready, 8000)
+    expect(errored).toBe('')
+    expect(ready).toBe(true)
+    await sleep(400) // let session.start round-trip before producing
 
-      const input = new InputStream({
-        apiUrl: apiUrl as string,
-        webhookId,
-        token: webhookToken,
-        sessionKey,
-      })
-      streams.push(input)
-      input.on('error', ({ message }) => {
-        errored = message
-      })
-      input.sendText('ping')
+    const input = new InputStream({
+      apiUrl: apiUrl as string,
+      webhookId,
+      token: webhookToken,
+      sessionKey,
+    })
+    streams.push(input)
+    input.on('error', ({ message }) => {
+      errored = message
+    })
+    input.sendText('ping')
 
-      // The whole point: streamed output actually arrived from the live flow.
-      const got = await waitUntil(() => completed || tokens.length > 0 || emits.length > 0, 60000)
-      expect(errored).toBe('')
-      expect(got).toBe(true)
-      expect(tokens.length + emits.length).toBeGreaterThan(0)
-    },
-    70000,
-  )
+    // The whole point: streamed output actually arrived from the live flow.
+    const got = await waitUntil(() => completed || tokens.length > 0 || emits.length > 0, 60000)
+    expect(errored).toBe('')
+    expect(got).toBe(true)
+    expect(tokens.length + emits.length).toBeGreaterThan(0)
+  }, 70000)
 })

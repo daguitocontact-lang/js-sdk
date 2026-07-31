@@ -128,9 +128,7 @@ function parsePreviewResult(wire: TemplatePreviewResultWire): TemplatePreviewRes
       ? wire.field_names.filter((n): n is string => typeof n === 'string')
       : [],
     fieldCount: typeof wire.field_count === 'number' ? wire.field_count : 0,
-    fieldsDetail: Array.isArray(wire.fields_detail)
-      ? wire.fields_detail.map(parseFieldDetail)
-      : [],
+    fieldsDetail: Array.isArray(wire.fields_detail) ? wire.fields_detail.map(parseFieldDetail) : [],
     example: wire.example ? parseExample(wire.example) : null,
     warnings: Array.isArray(wire.warnings) ? wire.warnings.map(parseWarning) : [],
     bodyHash: typeof wire.body_hash === 'string' ? wire.body_hash : '',

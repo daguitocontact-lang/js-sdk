@@ -126,7 +126,10 @@ export class WebhookStreamSession {
 
   private dispatch(message: SendableMessage, baseInput?: Record<string, unknown>): void {
     if (!this.ws) return
-    const envelope: Record<string, unknown> = { type: 'message', message: toInboundMessage(message) }
+    const envelope: Record<string, unknown> = {
+      type: 'message',
+      message: toInboundMessage(message),
+    }
     const computedBase = {
       ...computeBaseInput(message),
       ...(baseInput ?? this.opts.baseInput),

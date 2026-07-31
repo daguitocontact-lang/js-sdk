@@ -181,9 +181,7 @@ export function parseToolProgress(data: unknown): ToolProgressEvent | null {
   const stage = typeof data.stage === 'string' ? data.stage : ''
   const progress = typeof data.progress === 'number' ? data.progress : undefined
   const attempt =
-    typeof data.attempt === 'number' && Number.isInteger(data.attempt)
-      ? data.attempt
-      : undefined
+    typeof data.attempt === 'number' && Number.isInteger(data.attempt) ? data.attempt : undefined
   const traceId = typeof data.trace_id === 'string' ? data.trace_id : undefined
 
   let resource: ToolProgressResource | undefined
@@ -192,8 +190,7 @@ export function parseToolProgress(data: unknown): ToolProgressEvent | null {
     resource = {
       kind: typeof rawResource.kind === 'string' ? rawResource.kind : undefined,
       name: typeof rawResource.name === 'string' ? rawResource.name : undefined,
-      mediaKey:
-        typeof rawResource.media_key === 'string' ? rawResource.media_key : undefined,
+      mediaKey: typeof rawResource.media_key === 'string' ? rawResource.media_key : undefined,
       url: typeof rawResource.url === 'string' ? rawResource.url : undefined,
     }
   }

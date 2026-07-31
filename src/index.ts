@@ -55,11 +55,7 @@ export {
   AudioStreamError,
   SUPPORTED_AUDIO_CODECS,
 } from './audio-stream-session'
-export type {
-  AudioStreamOptions,
-  AudioStreamReady,
-  AudioCodec,
-} from './audio-stream-session'
+export type { AudioStreamOptions, AudioStreamReady, AudioCodec } from './audio-stream-session'
 
 export { WidgetSession } from './widget-session'
 export type { WidgetSessionOptions, WidgetInitResult, WidgetEventMap } from './widget-session'

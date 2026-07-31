@@ -29,7 +29,10 @@ export class StreamTokenError extends Error {
 }
 
 export async function mintStreamToken(input: StreamTokenInput): Promise<StreamTokenResult> {
-  const url = joinHttp(input.apiUrl, `/v1/webhooks/${encodeURIComponent(input.webhookId)}/stream-tokens`)
+  const url = joinHttp(
+    input.apiUrl,
+    `/v1/webhooks/${encodeURIComponent(input.webhookId)}/stream-tokens`,
+  )
 
   let response: Response
   try {

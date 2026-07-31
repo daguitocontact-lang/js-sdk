@@ -65,9 +65,7 @@ function okPreviewResult() {
       extracted: { motivo: 'cefalea', alergias: null },
       model: 'deepseek-v4-flash',
     },
-    warnings: [
-      { code: 'placeholder_empty', field: 'extra', message: 'placeholder has no body' },
-    ],
+    warnings: [{ code: 'placeholder_empty', field: 'extra', message: 'placeholder has no body' }],
     body_hash: 'sha256:abc123',
   }
 }

@@ -38,7 +38,9 @@ const client = new Daguito({ apiUrl, apiKey })
 const keys = await client.accountKeys.list()
 console.log(`[account-keys] ${keys.length} key(s) active`)
 for (const key of keys) {
-  console.log(`  - ${key.keyPrefix}  name=${JSON.stringify(key.name)}  mtd=${key.currentMtdMicroUsd}μ$`)
+  console.log(
+    `  - ${key.keyPrefix}  name=${JSON.stringify(key.name)}  mtd=${key.currentMtdMicroUsd}μ$`,
+  )
 }
 
 // 3. Mint a public flow key for embedding in a browser.

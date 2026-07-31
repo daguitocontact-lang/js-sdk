@@ -93,10 +93,9 @@ export function parseAccountKey(wire: AccountKeyWire): AccountKey {
     name: wire.name ?? '',
     keyPrefix: wire.key_prefix ?? '',
     monthlyBudgetMicroUsd:
-      typeof wire.monthly_budget_micro_usd === 'number'
-        ? wire.monthly_budget_micro_usd
-        : null,
-    currentMtdMicroUsd: typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
+      typeof wire.monthly_budget_micro_usd === 'number' ? wire.monthly_budget_micro_usd : null,
+    currentMtdMicroUsd:
+      typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
     createdAt: wire.created_at ?? '',
     lastUsedAt: wire.last_used_at ?? null,
     revokedAt: wire.revoked_at ?? null,
@@ -115,10 +114,9 @@ export function parsePublicKey(wire: PublicKeyWire): PublicKey {
     keyPrefix: wire.key_prefix ?? '',
     allowedOrigins: Array.isArray(wire.allowed_origins) ? wire.allowed_origins : [],
     monthlyBudgetMicroUsd:
-      typeof wire.monthly_budget_micro_usd === 'number'
-        ? wire.monthly_budget_micro_usd
-        : null,
-    currentMtdMicroUsd: typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
+      typeof wire.monthly_budget_micro_usd === 'number' ? wire.monthly_budget_micro_usd : null,
+    currentMtdMicroUsd:
+      typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
     createdAt: wire.created_at ?? '',
     lastUsedAt: wire.last_used_at ?? null,
     revokedAt: wire.revoked_at ?? null,
@@ -132,10 +130,9 @@ export function parsePublicKeyCreated(wire: PublicKeyCreatedWire): PublicKeyCrea
 export function parseOrgBudget(wire: OrgBudgetWire): OrgBudget {
   return {
     monthlyBudgetMicroUsd:
-      typeof wire.monthly_budget_micro_usd === 'number'
-        ? wire.monthly_budget_micro_usd
-        : null,
-    currentMtdMicroUsd: typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
+      typeof wire.monthly_budget_micro_usd === 'number' ? wire.monthly_budget_micro_usd : null,
+    currentMtdMicroUsd:
+      typeof wire.current_mtd_micro_usd === 'number' ? wire.current_mtd_micro_usd : 0,
     mtdResetAt: wire.mtd_reset_at ?? null,
   }
 }

@@ -127,7 +127,9 @@ test('accountKeys.setBudget refetches the full shape', async () => {
 test('accountKeys 401 maps to DaguitoError with status', async () => {
   const { client } = build(() => jsonResponse(401, { error: 'missing bearer' }))
   await assert.rejects(client.accountKeys.list(), (err) => {
-    return err instanceof DaguitoError && err.status === 401 && err.message.includes('missing bearer')
+    return (
+      err instanceof DaguitoError && err.status === 401 && err.message.includes('missing bearer')
+    )
   })
 })
 

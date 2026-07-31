@@ -14,10 +14,7 @@
  * or a polyfill the caller installs; we don't pull `ws` as a dep.
  */
 import { joinHttp } from './url'
-import {
-  appendClientQueryParams,
-  clientQueryParams,
-} from './internal/client-headers'
+import { appendClientQueryParams, clientQueryParams } from './internal/client-headers'
 
 export class AudioStreamError extends Error {
   constructor(message: string) {
@@ -26,13 +23,7 @@ export class AudioStreamError extends Error {
   }
 }
 
-export const SUPPORTED_AUDIO_CODECS = [
-  'pcm16',
-  'opus',
-  'webm-opus',
-  'mulaw',
-  'flac',
-] as const
+export const SUPPORTED_AUDIO_CODECS = ['pcm16', 'opus', 'webm-opus', 'mulaw', 'flac'] as const
 export type AudioCodec = (typeof SUPPORTED_AUDIO_CODECS)[number]
 
 export interface AudioStreamOptions {

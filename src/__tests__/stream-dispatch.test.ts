@@ -53,11 +53,9 @@ describe('routeStreamFrame', () => {
 
   it('computes flow.completed elapsed from startedAt', () => {
     const { emitter, events } = collect()
-    routeStreamFrame(
-      { type: 'flow.completed', data: { output: { ok: true } } },
-      emitter,
-      { startedAt: Date.now() - 50 },
-    )
+    routeStreamFrame({ type: 'flow.completed', data: { output: { ok: true } } }, emitter, {
+      startedAt: Date.now() - 50,
+    })
     expect(events).toHaveLength(1)
     const payload = events[0]!.payload as { elapsedMs: number; output: unknown }
     expect(payload.output).toEqual({ ok: true })
