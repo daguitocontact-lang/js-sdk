@@ -16,6 +16,7 @@
 
 import { AccountKeysService } from './admin/account-keys'
 import { BudgetsService } from './admin/budgets'
+import { EmailsService } from './admin/emails'
 import { FlowsService } from './admin/flows'
 import { AdminTransport } from './admin/http'
 import { KnowledgeAdminService } from './admin/knowledge-admin'
@@ -42,6 +43,7 @@ export class Daguito {
   readonly flows: FlowsService
   readonly templates: TemplatesService
   readonly knowledge: KnowledgeAdminService
+  readonly emails: EmailsService
 
   constructor(opts: DaguitoOptions) {
     if (!opts.apiKey) throw new Error('apiKey is required')
@@ -58,5 +60,6 @@ export class Daguito {
     this.flows = new FlowsService(transport)
     this.templates = new TemplatesService(transport)
     this.knowledge = new KnowledgeAdminService(transport)
+    this.emails = new EmailsService(transport)
   }
 }

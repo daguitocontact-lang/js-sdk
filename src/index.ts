@@ -116,6 +116,9 @@ export type {
   FlowGraphEdge,
 } from './admin/flows'
 
+export { EmailsService } from './admin/emails'
+export type { SendEmailInput, EmailAttachment } from './admin/emails'
+
 export { TemplatesService } from './admin/templates'
 export type {
   TemplateFieldType,
